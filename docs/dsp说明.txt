@@ -1,0 +1,7 @@
+1.保存类似PrebuildData里的数据。
+    已经构建的物体没有PrebuildData。
+    要从EntityData里的具体建筑类型，获取必要信息,组成MyData。
+
+2.创建
+    参考PlayerAction_Build.CreatePrebuilds，PlannetFactory.BuildFinally。
+    构建:MyData->New PrebuildData->PlannetFactory.AddPrebuildDataWithComponents->PlannetFactory.BuildFinally

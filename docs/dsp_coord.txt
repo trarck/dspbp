@@ -1,0 +1,17 @@
+y=sin(lat)
+t=cos(lat)
+x=cos(lat)*cos(lon)
+z=cos(lat)*sin(lon)
+
+lat = asin(y)
+lon = atan(x,z)
+seg = 经线格子数或赤道纬线格子数
+cell * seg = 2*PI*r = L
+cell = 2*PI*r/seg
+latIdx = lat*r/cell=lat*seg/(2*PI)
+lat = latIdx*2*PI/seg
+
+r'=r*cos(lat)
+
+L'=2*PI*r'=2*PI*r*cos(lat) //某个维度和赤道平行的圆周长
+seg'=L'/cell = 2*PI*r*cos(lat)/cell= seg*cos(lat)//纬线格子数
