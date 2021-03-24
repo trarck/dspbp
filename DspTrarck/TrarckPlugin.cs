@@ -139,14 +139,14 @@ namespace DspTrarck
 					Vector3 gcs = m_FactoryBP.planetCoordinate.LocalToGcs(snapPos);
 					Vector3 grid = m_FactoryBP.planetCoordinate.LocalToGrid(snapPos);
 					Vector2Int cell = m_FactoryBP.planetCoordinate.LocalToCell(snapPos);
-					Vector3 localPosNormal = m_FactoryBP.planetCoordinate.CellToLocalNormal(cell);
-					Vector3 localPos = m_FactoryBP.planetCoordinate.LocalNormalToLocal(localPosNormal);
+					Vector3 localPosNormal = m_FactoryBP.planetCoordinate.CellToNormal(cell);
+					Vector3 localPos = m_FactoryBP.planetCoordinate.NormalToGround(localPosNormal);
 
 					Vector2Int cell1 = m_FactoryBP.planetCoordinate.LocalToCell(hitPos);
 					Vector3 gcs1 = m_FactoryBP.planetCoordinate.CellToGcs(cell1);
 					Vector3 grid1 = m_FactoryBP.planetCoordinate.CellToGrid(cell1);
-					Vector3 localPosNormal1 = m_FactoryBP.planetCoordinate.CellToLocalNormal(cell1);
-					Vector3 localPos1 = m_FactoryBP.planetCoordinate.LocalNormalToLocal(localPosNormal1);
+					Vector3 localPosNormal1 = m_FactoryBP.planetCoordinate.CellToNormal(cell1);
+					Vector3 localPos1 = m_FactoryBP.planetCoordinate.NormalToGround(localPosNormal1);
 
 					Debug.LogFormat("Test1:mousePos :{0},hit pos:({1},{2},{3}),snap Pos:({4},{5},{6}),cell pos:({7},{8},{9}),pos2:({10},{11},{12})", mousePos,
 						hitPos.x, hitPos.y, hitPos.z,

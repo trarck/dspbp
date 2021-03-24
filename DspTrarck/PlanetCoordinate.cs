@@ -524,17 +524,17 @@ namespace DspTrarck
 
 		public int segment;
 		public float radius;
+		public float groundOffset = 0.2f;
 
 		public Vector3 kernelPosition;
 		public Quaternion rotation;
 
-
-		public Vector3 GcsToLocalNormal(Vector3 gcs)
+		public Vector3 GcsToNormal(Vector3 gcs)
 		{
-			return GcsToLocalNormal(gcs.x, gcs.y);
+			return GcsToNormal(gcs.x, gcs.y);
 		}
 
-		public Vector3 GcsToLocalNormal(float longitude, float latitude)
+		public Vector3 GcsToNormal(float longitude, float latitude)
 		{
 			float sinLat = Mathf.Sin(latitude);
 			float cosLat = Mathf.Cos(latitude);
@@ -562,10 +562,13 @@ namespace DspTrarck
 
 		public Vector3 LocalToGcs(Vector3 localPos)
 		{
+			//离地面的距离
+			float offsetGround = localPos.magnitude - radius - groundOffset;
+
 			localPos.Normalize();
 			float latitude = Mathf.Asin(localPos.y);
 			float longitude = Mathf.Atan2(localPos.x, -localPos.z);
-			return new Vector3(longitude, latitude, 0);
+			return new Vector3(longitude, latitude, offsetGround);
 		}
 
 		public Vector2 LocalToGrid(Vector3 localPos)
@@ -639,21 +642,21 @@ namespace DspTrarck
 			return GridToGcs(grid);
 		}
 
-		public Vector3 CellToLocalNormal(Vector2Int cell)
+		public Vector3 CellToNormal(Vector2Int cell)
 		{
 			Vector3 gcs = CellToGcs(cell);
-			return GcsToLocalNormal(gcs);
+			return GcsToNormal(gcs);
 		}
 
-		public Vector3 CellToLocalNormal(Vector3Int cell)
+		public Vector3 CellToNormal(Vector3Int cell)
 		{
 			Vector3 gcs = CellToGcs(cell);
-			return GcsToLocalNormal(gcs);
+			return GcsToNormal(gcs);
 		}
 
-		public Vector3 LocalNormalToLocal(Vector3 vec)
+		public Vector3 NormalToGround(Vector3 vec)
 		{
-			return vec * (radius + 0.2f);
+			return vec * (radius + groundOffset);
 		}
 
 		public Vector3 LocalToWorldPosition(Vector3 localPos)

@@ -105,6 +105,8 @@ namespace DspTrarck
 
 		//x:longitude index,y:latitude index
 		public Vector2Int gcsCellIndex;
+		//离地面的距离
+		public float offsetGround;
 
 		public short pickOffset;
 
@@ -119,6 +121,9 @@ namespace DspTrarck
 		public Quaternion rot2;
 
 		public Vector2Int gcsCellIndex2;
+		//离地面的距离2
+		public float offsetGround2;
+
 
 		//for miner	   insert
 		public int refCount;

@@ -182,6 +182,8 @@ namespace DspTrarck
 					entitiesIdToBuildPreviewMap[entityData.entityId] = buildPreview;
 				}
 
+				//Debug.LogFormat("map count:{0}", entitiesIdToBuildPreviewMap.Count);
+
 				//处理连接。连接保存的是entity id之间的联系
 				if (data.connects != null && data.connects.Count > 0)
 				{
@@ -200,6 +202,14 @@ namespace DspTrarck
 									buildPreview.outputToSlot = connect.toSlot;
 									buildPreview.outputOffset = connect.offset;
 								}
+								else
+								{
+									Debug.LogFormat("Can't find from entity {0}", connect.toObjId);
+								}
+							}
+							else
+							{
+								Debug.LogFormat("Can't find to entity {0}", connect.fromObjId);
 							}
 						}
 						else
@@ -270,7 +280,7 @@ namespace DspTrarck
 		private void UpdateBuildCell()
 		{
 			m_BuildCell = m_PlanetCoordinate.LocalToCell(m_BuildPos);
-			Debug.LogFormat("UpdateBuildCell:cell={0},pos={1}", m_BuildCell, m_BuildPos);
+			//Debug.LogFormat("UpdateBuildCell:cell={0},pos={1}", m_BuildCell, m_BuildPos);
 		}
 
 		public void UpdateBuildPreviewsPosition()
@@ -297,27 +307,27 @@ namespace DspTrarck
 		/// <param name="cellOffset"></param>
 		public void SetBuildPreviewPosition(BuildPreview buildPreview, BPEntityData bpEntity, Vector2Int cellOffset)
 		{
-			Vector3 normalPos = m_PlanetCoordinate.CellToLocalNormal(bpEntity.gcsCellIndex + cellOffset);
-			buildPreview.lpos = m_PlanetCoordinate.LocalNormalToLocal(normalPos);
+			Vector3 posNormal = m_PlanetCoordinate.CellToNormal(bpEntity.gcsCellIndex + cellOffset);
+			buildPreview.lpos = m_PlanetCoordinate.NormalToGround(posNormal) + posNormal * bpEntity.offsetGround;
 
 			//Debug.LogFormat("SetBuildPreviewPosition:cell={0},offset={1},pos={2}", bpEntity.gcsCellIndex , cellOffset,buildPreview.lpos);
 
 			if (bpEntity.type == BPEntityType.Inserter)
 			{
-				normalPos = m_PlanetCoordinate.CellToLocalNormal(bpEntity.gcsCellIndex2 + cellOffset);
-				buildPreview.lpos2 = m_PlanetCoordinate.LocalNormalToLocal(normalPos);
+				posNormal = m_PlanetCoordinate.CellToNormal(bpEntity.gcsCellIndex2 + cellOffset);
+				buildPreview.lpos2 = m_PlanetCoordinate.NormalToGround(posNormal) + posNormal * bpEntity.offsetGround2;
 			}
 		}
 
 		public void SetPrebuildDataPosition(PrebuildData prebuildData, BPEntityData bpEntity)
 		{
-			Vector3 normalPos = m_PlanetCoordinate.CellToLocalNormal(bpEntity.gcsCellIndex+m_BuildCell);
-			prebuildData.pos = m_PlanetCoordinate.LocalNormalToLocal(normalPos);
+			Vector3 normalPos = m_PlanetCoordinate.CellToNormal(bpEntity.gcsCellIndex+m_BuildCell);
+			prebuildData.pos = m_PlanetCoordinate.NormalToGround(normalPos);
 
 			if (bpEntity.type == BPEntityType.Inserter)
 			{
-				normalPos = m_PlanetCoordinate.CellToLocalNormal(bpEntity.gcsCellIndex2 + m_BuildCell);
-				prebuildData.pos2 = m_PlanetCoordinate.LocalNormalToLocal(normalPos);
+				normalPos = m_PlanetCoordinate.CellToNormal(bpEntity.gcsCellIndex2 + m_BuildCell);
+				prebuildData.pos2 = m_PlanetCoordinate.NormalToGround(normalPos);
 			}
 		}
 		#endregion
@@ -366,9 +376,13 @@ namespace DspTrarck
 		{
 			//直角坐标转换成格子坐标。保留原坐标，比对作用。
 			bpEntity.gcsCellIndex = m_PlanetCoordinate.LocalToCell(bpEntity.pos);
-			if (bpEntity.type == BPEntityType.Inserter)
+			Debug.LogFormat("height:{0},{1},{2}", bpEntity.pos.magnitude, planetData.radius,bpEntity.pos.magnitude-planetData.radius);
+			bpEntity.offsetGround = Mathf.Max(0, bpEntity.pos.magnitude - planetData.radius-0.2f);
+
+			//if (bpEntity.type == BPEntityType.Inserter)
 			{
 				bpEntity.gcsCellIndex2 = m_PlanetCoordinate.LocalToCell(bpEntity.pos2);
+				bpEntity.offsetGround2 = Mathf.Max(0, bpEntity.pos2.magnitude - planetData.radius - 0.2f);
 			}
 		}
 
@@ -587,9 +601,9 @@ namespace DspTrarck
 			//更新连接
 			UpdateEntitiesConnects(data);
 
-			Debug.LogFormat("count:{0}", data.entities.Count);
+			Debug.LogFormat("entities count:{0}", data.entities.Count);
 			UpdateBPDataGrid(data);
-			Debug.LogFormat("count:{0}", data.entities.Count);
+			Debug.LogFormat("coonect count:{0}", data.connects!=null?data.connects.Count:0);
 			Debug.Log(JsonUtility.ToJson(data));
 			return data;
 		}
@@ -616,6 +630,7 @@ namespace DspTrarck
 					for (int i = 0; i < 16; ++i)
 					{
 						m_PlanetFactory.ReadObjectConn(bpEntity.entityId, i, out isOutput, out otherObjId, out otherSlot);
+						//Debug.LogFormat("connect:{0},{1},{2}", otherObjId, isOutput, otherSlot);
 
 						//连接是相互的,只记录一种连接。
 						//如果有截断，则忽略连接。复制的时候没办法补齐另一方。
@@ -629,6 +644,7 @@ namespace DspTrarck
 							connect.toSlot = otherSlot;
 							connect.isOutput = true;
 							connect.offset = 0;
+							bpData.connects.Add(connect);
 						}
 					}
 				}
@@ -668,8 +684,8 @@ namespace DspTrarck
 			data.latitude = gcs.y;
 
 			//记录原位置
-			Vector3 normalPos = m_PlanetCoordinate.GcsToLocalNormal(gcs);
-			data.originalPos = m_PlanetCoordinate.LocalNormalToLocal(normalPos);
+			Vector3 normalPos = m_PlanetCoordinate.GcsToNormal(gcs);
+			data.originalPos = m_PlanetCoordinate.NormalToGround(normalPos);
 		}
 
 		//把bp的包围合，左上角设置成0，0
@@ -753,8 +769,8 @@ namespace DspTrarck
 		}
 		public Vector3 GetPlanetLocalPosition(Vector2Int cellIndex)
 		{
-			Vector3 localNormal = m_PlanetCoordinate.CellToLocalNormal(cellIndex);
-			return m_PlanetCoordinate.LocalNormalToLocal(localNormal);
+			Vector3 localNormal = m_PlanetCoordinate.CellToNormal(cellIndex);
+			return m_PlanetCoordinate.NormalToGround(localNormal);
 		}
 	}
 }

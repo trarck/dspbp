@@ -220,8 +220,8 @@ namespace DspTrarck
 
 		public Vector3 GetPlanetLocalPosition(Vector2Int cellIndex)
 		{
-			Vector3 localNormal = m_PlanetCoordinate.CellToLocalNormal(cellIndex);
-			return m_PlanetCoordinate.LocalNormalToLocal(localNormal);
+			Vector3 localNormal = m_PlanetCoordinate.CellToNormal(cellIndex);
+			return m_PlanetCoordinate.NormalToGround(localNormal);
 		}
 	}
 }
