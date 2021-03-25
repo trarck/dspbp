@@ -190,6 +190,7 @@ namespace DspTrarck
 					BuildPreview other = null;
 					foreach (var connect in data.connects)
 					{
+						Debug.LogFormat("[{0}]connect:{1},{2},{3},{4},{5}", connect.isOutput ? "output" : "input", connect.fromObjId, connect.fromSlot, connect.toObjId, connect.toSlot, connect.offset);
 						if (connect.isOutput)
 						{
 							if (entitiesIdToBuildPreviewMap.TryGetValue(connect.fromObjId, out buildPreview))
@@ -204,27 +205,35 @@ namespace DspTrarck
 								}
 								else
 								{
-									Debug.LogFormat("Can't find from entity {0}", connect.toObjId);
+									Debug.LogFormat("Can't find to entity {0}", connect.toObjId);
 								}
 							}
 							else
 							{
-								Debug.LogFormat("Can't find to entity {0}", connect.fromObjId);
+								Debug.LogFormat("Can't find from entity {0}", connect.fromObjId);
 							}
 						}
 						else
 						{
-							//只保存outpu，这里不会执行到。
+							//抓子会同时有input和output。
 							if (entitiesIdToBuildPreviewMap.TryGetValue(connect.fromObjId, out buildPreview))
 							{
 								if (entitiesIdToBuildPreviewMap.TryGetValue(connect.toObjId, out other))
 								{
 									buildPreview.input = other;
 									buildPreview.inputObjId = 0;
-									buildPreview.inputFromSlot = connect.fromSlot;
-									buildPreview.inputToSlot = connect.toSlot;
+									buildPreview.inputFromSlot = connect.toSlot;
+									buildPreview.inputToSlot = connect.fromSlot;
 									buildPreview.inputOffset = connect.offset;
 								}
+								else
+								{
+									Debug.LogFormat("Can't find to entity {0}", connect.toObjId);
+								}
+							}
+							else
+							{
+								Debug.LogFormat("Can't find from entity {0}", connect.fromObjId);
 							}
 						}
 					}
@@ -310,12 +319,13 @@ namespace DspTrarck
 			Vector3 posNormal = m_PlanetCoordinate.CellToNormal(bpEntity.gcsCellIndex + cellOffset);
 			buildPreview.lpos = m_PlanetCoordinate.NormalToGround(posNormal) + posNormal * bpEntity.offsetGround;
 
-			//Debug.LogFormat("SetBuildPreviewPosition:cell={0},offset={1},pos={2}", bpEntity.gcsCellIndex , cellOffset,buildPreview.lpos);
+			Debug.LogFormat("SetBuildPreviewPosition:cell={0},offset={1},pos={2}", bpEntity.gcsCellIndex , cellOffset,buildPreview.lpos);
 
 			if (bpEntity.type == BPEntityType.Inserter)
 			{
 				posNormal = m_PlanetCoordinate.CellToNormal(bpEntity.gcsCellIndex2 + cellOffset);
 				buildPreview.lpos2 = m_PlanetCoordinate.NormalToGround(posNormal) + posNormal * bpEntity.offsetGround2;
+				Debug.LogFormat("SetBuildPreviewPosition2:cell={0},offset={1},pos={2}", bpEntity.gcsCellIndex2, cellOffset, buildPreview.lpos2);
 			}
 		}
 
@@ -426,6 +436,10 @@ namespace DspTrarck
 				bpEntity.rot2 = inserterComponent.rot2;
 				bpEntity.pickOffset = inserterComponent.pickOffset;
 				bpEntity.insertOffset = inserterComponent.insertOffset;
+				if (bpEntity.refCount > 0)
+				{
+					bpEntity.refArr = new int[bpEntity.refCount];
+				}
 			}
 			else if (entity.assemblerId > 0)
 			{
@@ -621,31 +635,81 @@ namespace DspTrarck
 					bpData.connects.Clear();
 				}
 
-				bool isOutput;
-				int otherObjId;
-				int otherSlot;
+				//抓子的input和output
+				foreach (var bpEntity in bpData.entities)
+				{
+					if (bpEntity.type != BPEntityType.Inserter)
+					{
+						continue;
+					}
+					CreateEntityBothConnect(bpEntity, ref bpData.connects);
+				}
 
 				foreach (var bpEntity in bpData.entities)
 				{
-					for (int i = 0; i < 16; ++i)
+					//抓子已经处理过
+					if (bpEntity.type == BPEntityType.Inserter)
 					{
-						m_PlanetFactory.ReadObjectConn(bpEntity.entityId, i, out isOutput, out otherObjId, out otherSlot);
-						//Debug.LogFormat("connect:{0},{1},{2}", otherObjId, isOutput, otherSlot);
+						continue;
+					}
+					CreateEntityOutputConnect(bpEntity, ref bpData.connects);
+				}
+			}
+		}
 
-						//连接是相互的,只记录一种连接。
-						//如果有截断，则忽略连接。复制的时候没办法补齐另一方。
-						//这里只记录output.
-						if (otherObjId != 0 && isOutput)
-						{
-							ConnectData connect = new ConnectData();
-							connect.fromObjId = bpEntity.entityId;
-							connect.toObjId = otherObjId;
-							connect.fromSlot = i;
-							connect.toSlot = otherSlot;
-							connect.isOutput = true;
-							connect.offset = 0;
-							bpData.connects.Add(connect);
-						}
+		public void CreateEntityBothConnect(BPEntityData bpEntity,  ref List<ConnectData> connects)
+		{
+			bool isOutput;
+			int otherObjId;
+			int otherSlot;
+
+			for (int i = 0; i < 16; ++i)
+			{
+				m_PlanetFactory.ReadObjectConn(bpEntity.entityId, i, out isOutput, out otherObjId, out otherSlot);
+				Debug.LogFormat("both connect:{0},{1},{2},{3},{4}",bpEntity.entityId,i, isOutput, otherObjId, otherSlot);
+
+				if (otherObjId != 0)
+				{
+					ConnectData connect = new ConnectData();
+					connect.fromObjId = bpEntity.entityId;
+					connect.toObjId = otherObjId;
+					connect.fromSlot = i;
+					connect.toSlot = otherSlot;
+					connect.isOutput = isOutput;
+					connect.offset = 0;
+
+					connects.Add(connect);
+				}
+			}
+		}
+
+		public void CreateEntityOutputConnect(BPEntityData bpEntity, ref List<ConnectData> connects)
+		{
+			bool isOutput;
+			int otherObjId;
+			int otherSlot;
+
+			for (int i = 0; i < 16; ++i)
+			{
+				m_PlanetFactory.ReadObjectConn(bpEntity.entityId, i, out isOutput, out otherObjId, out otherSlot);
+				Debug.LogFormat("output connect:{0},{1},{2},{3},{4}",bpEntity.entityId, i, isOutput, otherObjId, otherSlot);
+
+				//连接是相互的,只记录一种连接。
+				//如果有截断，则忽略连接。复制的时候没办法补齐另一方。
+				//这里只记录output.
+				if (otherObjId != 0 && isOutput)
+				{
+					ConnectData connect = new ConnectData();
+					connect.fromObjId = bpEntity.entityId;
+					connect.toObjId = otherObjId;
+					connect.fromSlot = i;
+					connect.toSlot = otherSlot;
+					connect.isOutput = isOutput;
+					connect.offset = 0;
+
+					if (!BPData.IsConnectExists(connect, connects))
+					{
+						connects.Add(connect);
 					}
 				}
 			}
@@ -696,6 +760,9 @@ namespace DspTrarck
 				BPEntityData entityData = data.entities[i];
 				entityData.gcsCellIndex.x -= data.gridBounds.xMin;
 				entityData.gcsCellIndex.y -= data.gridBounds.yMin;
+
+				entityData.gcsCellIndex2.x -= data.gridBounds.xMin;
+				entityData.gcsCellIndex2.y -= data.gridBounds.yMin;
 			}
 
 			data.gridBounds.position = Vector3Int.zero;

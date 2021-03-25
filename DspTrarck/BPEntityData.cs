@@ -171,20 +171,20 @@ namespace DspTrarck
 			entities = new List<BPEntityData>();
 		}
 
-		public bool IsConnectExists(ConnectData connect,bool checkSelf=true)
+		public static bool IsConnectExists(ConnectData connect, List<ConnectData> connects, bool checkSelf = true)
 		{
 			if (connects != null && connects.Count > 0)
 			{
 				foreach (var iter in connects)
 				{
 					//完全相等
-					if (checkSelf &&  iter.fromObjId == connect.fromObjId && iter.toObjId == connect.toObjId && iter.fromSlot == connect.fromSlot && iter.toSlot == connect.toSlot)
+					if (checkSelf && iter.fromObjId == connect.fromObjId && iter.toObjId == connect.toObjId && iter.fromSlot == connect.fromSlot && iter.toSlot == connect.toSlot && iter.isOutput==connect.isOutput)
 					{
 						return true;
 					}
 
 					//反向连接。连接是相互的，只保留一个就可以了。
-					if (iter.fromObjId == connect.toObjId && iter.toObjId == connect.fromObjId && iter.fromSlot == connect.toSlot && iter.toSlot == connect.fromSlot)
+					if (iter.fromObjId == connect.toObjId && iter.toObjId == connect.fromObjId && iter.fromSlot == connect.toSlot && iter.toSlot == connect.fromSlot && iter.isOutput!=connect.isOutput)
 					{
 						return true;
 					}
