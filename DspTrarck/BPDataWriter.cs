@@ -10,7 +10,7 @@ namespace DspTrarck
 
 		public static void WriteBPDataToFile(string filepath, BPData data)
 		{
-			using (FileStream fs = new FileStream(filepath, FileMode.Truncate, FileAccess.Write))
+			using (FileStream fs = new FileStream(filepath,File.Exists(filepath)?FileMode.Truncate: FileMode.OpenOrCreate, FileAccess.Write))
 			using (BinaryWriter writer = new BinaryWriter(fs))
 			{
 				WriteBPData(writer, data);

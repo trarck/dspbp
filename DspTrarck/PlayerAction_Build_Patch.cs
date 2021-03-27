@@ -15,7 +15,7 @@ namespace DspTrarck
 				runOriginal = false;
 				__instance.waitConfirm = __instance.cursorValid;
 
-				if (__instance.buildPreviews.Count > 0)
+				if (__instance.buildPreviews!=null && __instance.buildPreviews.Count > 0)
 				{
 					__instance.buildPreviews.Clear();
 				}
@@ -66,8 +66,20 @@ namespace DspTrarck
 						bool outputIsBelt = buildPreview.output != null ? buildPreview.output.desc.isBelt : false;
 
 						Vector3 zero = Vector3.zero;
-						zero = (inputIsBelt && !outputIsBelt) ? buildPreview.output.lpos : 
-							((inputIsBelt || !outputIsBelt) ? ((buildPreview.input.lpos+ buildPreview.output.lpos) * 0.5f) : buildPreview.input.lpos);
+						if (buildPreview.input != null && buildPreview.output != null)
+						{
+							zero = (inputIsBelt && !outputIsBelt) ? buildPreview.output.lpos :
+								((inputIsBelt || !outputIsBelt) ? ((buildPreview.input.lpos + buildPreview.output.lpos) * 0.5f) : buildPreview.input.lpos);
+						}
+						else if (buildPreview.input == null)
+						{
+							zero = (buildPreview.lpos + buildPreview.output.lpos) * 0.5f;
+						}
+						else if (buildPreview.output == null)
+						{
+							zero = (buildPreview.input.lpos + buildPreview.lpos2) * 0.5f;
+						}
+
 						float num2 = __instance.player.planetData.aux.mainGrid.CalcSegmentsAcross(zero, buildPreview.lpos, buildPreview.lpos2);
 						float num3 = num2;
 						float magnitude = forward.magnitude;
@@ -76,22 +88,24 @@ namespace DspTrarck
 						float num6 = 3.499f;
 						float num7 = 0.88f;
 
-						if (inputIsBelt && outputIsBelt)
+						if (buildPreview.input != null && buildPreview.output != null)
 						{
-							num5 = 0.4f;
-							num4 = 5f;
-							num6 = 3.2f;
-							num7 = 0.8f;
+							if (inputIsBelt && outputIsBelt)
+							{
+								num5 = 0.4f;
+								num4 = 5f;
+								num6 = 3.2f;
+								num7 = 0.8f;
+							}
+							else if (!inputIsBelt && !outputIsBelt)
+							{
+								num5 = 0.98f;
+								num4 = 7.5f;
+								num6 = 3.799f;
+								num7 = 1.501f;
+								num3 -= 0.3f;
+							}
 						}
-						else if (!inputIsBelt && !outputIsBelt)
-						{
-							num5 = 0.98f;
-							num4 = 7.5f;
-							num6 = 3.799f;
-							num7 = 1.501f;
-							num3 -= 0.3f;
-						}
-
 						Debug.LogFormat("innsert:{0},{1},{2},{3},{4},{5},{6}", magnitude, num2, num3, num4, num5, num6, num7);
 						if (magnitude > num4)
 						{
@@ -119,11 +133,12 @@ namespace DspTrarck
 								inserterBuildTip.gridLen = buildPreview.refCount;
 							}
 						}
-
+						Debug.LogFormat("condition:{0},{1}", buildPreview.objId, buildPreview.condition);
 						if (buildPreview.condition != EBuildCondition.Ok)
 						{
 							__result = false;
 							__instance.cursorText = buildPreview.conditionText;
+							__instance.cursorWarning = true;
 							return;
 						}
 					}
@@ -136,12 +151,14 @@ namespace DspTrarck
 					{
 						__result = false;
 						__instance.cursorText = buildPreview.conditionText;
+						__instance.cursorWarning = true;
 						return;
 					}
 				}
 				//all pass
 				__result = true;
 				__instance.cursorText = "点击鼠标建造".Translate();
+				__instance.cursorWarning = false;
 				Debug.LogFormat("CheckBuildConditions:{0}", __result);
 			}
 		}

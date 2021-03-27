@@ -23,6 +23,9 @@ namespace DspTrarck
 		private Vector2Int m_BuildCell = Vector2Int.zero;
 
 		private List<BuildPreview> m_BuildPreviews;
+		//当前使用的Entity。和buildpreview一一对应。
+		private List<BPEntityData> m_CurrentEntities;
+
 		private List<PrebuildData> m_PrebuildDatas;
 
 
@@ -161,10 +164,19 @@ namespace DspTrarck
 				m_BuildPreviews.Clear();
 			}
 
-			TryCreateBuildPrevies(currentData, ref m_BuildPreviews);
+			if (m_CurrentEntities == null)
+			{
+				m_CurrentEntities = new List<BPEntityData>();
+			}
+			else
+			{
+				m_CurrentEntities.Clear();
+			}
+
+			TryCreateBuildPrevies(currentData, ref m_BuildPreviews, ref m_CurrentEntities);
 		}
 
-		public bool TryCreateBuildPrevies(BPData data, ref List<BuildPreview> buildPreviews)
+		public bool TryCreateBuildPrevies(BPData data, ref List<BuildPreview> buildPreviews, ref List<BPEntityData> entities)
 		{
 			if (data != null && data.entities.Count > 0)
 			{
@@ -178,6 +190,7 @@ namespace DspTrarck
 					BPEntityData entityData = data.entities[i];
 					buildPreview = CreateBuildPreview(entityData);
 					buildPreviews.Add(buildPreview);
+					entities.Add(entityData);
 
 					entitiesIdToBuildPreviewMap[entityData.entityId] = buildPreview;
 				}
@@ -300,7 +313,7 @@ namespace DspTrarck
 				Vector2Int offsetCell = currentData.posType == BPData.PosType.Relative ? m_BuildCell : Vector2Int.zero;
 				for (int i = 0; i < m_BuildPreviews.Count; ++i)
 				{
-					BPEntityData entityData = currentData.entities[i];
+					BPEntityData entityData = m_CurrentEntities[i];
 					BuildPreview buildPreview = m_BuildPreviews[i];
 					SetBuildPreviewPosition(buildPreview, entityData, offsetCell);
 					buildPreview.condition = EBuildCondition.Ok;
@@ -319,7 +332,7 @@ namespace DspTrarck
 			Vector3 posNormal = m_PlanetCoordinate.CellToNormal(bpEntity.gcsCellIndex + cellOffset);
 			buildPreview.lpos = m_PlanetCoordinate.NormalToGround(posNormal) + posNormal * bpEntity.offsetGround;
 
-			Debug.LogFormat("SetBuildPreviewPosition:cell={0},offset={1},pos={2}", bpEntity.gcsCellIndex , cellOffset,buildPreview.lpos);
+			Debug.LogFormat("SetBuildPreviewPosition:cell={0},offset={1},pos={2},proto={3},type={4},entityId={5}", bpEntity.gcsCellIndex , cellOffset,buildPreview.lpos,bpEntity.protoId,bpEntity.type,bpEntity.entityId);
 
 			if (bpEntity.type == BPEntityType.Inserter)
 			{
