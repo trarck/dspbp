@@ -4,6 +4,7 @@ using System.Reflection;
 using BepInEx;
 using HarmonyLib;
 using UnityEngine;
+using YH.MyInput;
 
 namespace DspTrarck
 {
@@ -11,14 +12,11 @@ namespace DspTrarck
 	public class TrarckPlugin: BaseUnityPlugin
 	{
 		private bool m_EnterFactoryBPStart;
-		private KeyCode m_EnterFBPKeyOne= KeyCode.LeftControl;
-		private KeyCode m_EnterFBPKeyTwo = KeyCode.Z;
-		private bool m_EnterFBPKeyOneDown = false;
-		private bool m_EnterFBPKeyTwoDown = false;
 
-		private KeyCode m_CopyEntitiesKey = KeyCode.J;
-		private KeyCode m_BuildEntitiesKey = KeyCode.K;
-		private KeyCode m_SaveBPKey = KeyCode.S;
+		private YH.MyInput.CombineKey m_BPEnterKey = new YH.MyInput.CombineKey("BPEnter", true, KeyCode.LeftControl, KeyCode.RightControl, KeyCode.Z);
+		private YH.MyInput.CombineKey m_CopyEntitiesKey = new YH.MyInput.CombineKey("CopyEntities", true, KeyCode.J);
+		private YH.MyInput.CombineKey m_BuildEntitiesKey = new YH.MyInput.CombineKey("BuildEntities", true, KeyCode.Z);
+		private YH.MyInput.CombineKey m_SaveBPKey = new YH.MyInput.CombineKey("SaveBP", true, KeyCode.S);
 
 		private bool m_SelectStart;
 		private Vector3 m_MouseStartPosition;
@@ -93,6 +91,8 @@ namespace DspTrarck
 
 		void Update()
 		{
+			KeyManager.Instance.Update();
+
 			if (!m_BPBuild)
 			{
 				MultiSelectTick();
@@ -107,14 +107,14 @@ namespace DspTrarck
 					m_FactoryBP.player = GameMain.mainPlayer;
 				}
 
-				if (Input.GetKeyDown(m_CopyEntitiesKey))
+				if (m_CopyEntitiesKey.IsDown())
 				{
 					Debug.Log("On copy entities Key down");
 					//copy
 					CopyEntities();
 				}
 
-				if (Input.GetKeyDown(m_BuildEntitiesKey))
+				if (m_BuildEntitiesKey.IsDown())
 				{
 					Debug.Log("On build bp entities Key down");
 					//build
@@ -122,52 +122,11 @@ namespace DspTrarck
 					m_BPBuild = true;
 				}
 
-				if (Input.GetKeyDown(m_SaveBPKey))
+				if (m_SaveBPKey.IsDown())
 				{
 					Debug.Log("On save bp Key down");
 					//save
 					SaveCurrentBPData();
-				}
-
-				if (Input.GetKeyDown(KeyCode.Z))
-				{
-
-					Vector3 mousePos = Input.mousePosition;
-					Vector3 hitPos = m_FactoryBP.playerActionBuild.groundTestPos;
-					Vector3 snapPos = m_FactoryBP.playerActionBuild.groundSnappedPos;
-
-					Vector3 gcs = m_FactoryBP.planetCoordinate.LocalToGcs(snapPos);
-					Vector3 grid = m_FactoryBP.planetCoordinate.LocalToGrid(snapPos);
-					Vector2Int cell = m_FactoryBP.planetCoordinate.LocalToCell(snapPos);
-					Vector3 localPosNormal = m_FactoryBP.planetCoordinate.CellToNormal(cell);
-					Vector3 localPos = m_FactoryBP.planetCoordinate.NormalToGround(localPosNormal);
-
-					Vector2Int cell1 = m_FactoryBP.planetCoordinate.LocalToCell(hitPos);
-					Vector3 gcs1 = m_FactoryBP.planetCoordinate.CellToGcs(cell1);
-					Vector3 grid1 = m_FactoryBP.planetCoordinate.CellToGrid(cell1);
-					Vector3 localPosNormal1 = m_FactoryBP.planetCoordinate.CellToNormal(cell1);
-					Vector3 localPos1 = m_FactoryBP.planetCoordinate.NormalToGround(localPosNormal1);
-
-					Debug.LogFormat("Test1:mousePos :{0},hit pos:({1},{2},{3}),snap Pos:({4},{5},{6}),cell pos:({7},{8},{9}),pos2:({10},{11},{12})", mousePos,
-						hitPos.x, hitPos.y, hitPos.z,
-						snapPos.x	 , snapPos.y, snapPos.z,
-							localPos.x, localPos.y, localPos.z,
-							localPos1.x, localPos1.y, localPos1.z
-						);
-
-					Debug.LogFormat("Test2:gcs :{0},{1} ={2},{3},grid:{4},{5}={6},{7}", gcs.x, gcs.y,gcs1.x,gcs1.y,
-						  grid.x,grid.y,grid1.x,grid1.y
-						);
-
-					Debug.LogFormat("Test3:pos Normal :{0},{1},{2}={3},{4},{5}={6},{7},{8}",
-								snapPos.normalized.x, snapPos.normalized.y, snapPos.normalized.z,
-								localPosNormal.x, localPosNormal.y, localPosNormal.z,
-								localPosNormal1.x, localPosNormal1.y, localPosNormal1.z
-								);
-
-					Debug.LogFormat("Test4:cell :{0},{1}={2},{3}",
-						cell.x, cell.y,
-						cell1.x, cell1.y);
 				}
 
 				if (m_BPBuild)
@@ -194,35 +153,11 @@ namespace DspTrarck
 
 		private void MultiSelectTick()
 		{
-			if (Input.GetKeyDown(m_EnterFBPKeyOne))
-			{
-				m_EnterFBPKeyOneDown = true;
-				Debug.Log(1);
-			}
-
-			if (Input.GetKeyDown(m_EnterFBPKeyTwo))
-			{
-				m_EnterFBPKeyTwoDown = true;
-				Debug.Log(3);
-			}
-
-			if (m_EnterFBPKeyOneDown && m_EnterFBPKeyTwoDown)
+			if (m_BPEnterKey.IsDown())
 			{
 				m_EnterFactoryBPStart = !m_EnterFactoryBPStart;
 
 				m_SelectStart = false;
-			}
-
-			if (Input.GetKeyUp(m_EnterFBPKeyOne))
-			{
-				m_EnterFBPKeyOneDown = false;
-				Debug.Log(2);
-			}
-
-			if (Input.GetKeyUp(m_EnterFBPKeyTwo))
-			{
-				m_EnterFBPKeyTwoDown = false;
-				Debug.Log(4);
 			}
 
 

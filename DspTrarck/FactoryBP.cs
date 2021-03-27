@@ -344,23 +344,24 @@ namespace DspTrarck
 
 		#region Update
 
-		public void SaveEntities(string name, List<EntityData> entities, BPData.PosType posType)
-		{
-			//crate data
-			BPData bpData = CreateBPData(name, entities, posType);
-			SaveBPData(bpData);
-		}
-		public void UpdatePosType(BPData.PosType posType)
-		{
-			if (currentData!=null)
-			{
-				currentData.posType = posType;
+		//public void SaveEntities(string name, List<EntityData> entities, BPData.PosType posType)
+		//{
+		//	//crate data
+		//	BPData bpData = CreateBPData(name, entities, posType);
+		//	SaveBPData(bpData);
+		//}
 
-				UpdateBPDataGrid(currentData);
+		//public void UpdatePosType(BPData.PosType posType)
+		//{
+		//	if (currentData!=null)
+		//	{
+		//		currentData.posType = posType;
 
-				SaveBPData(currentData);
-			}
-		}
+		//		UpdateBPDataGrid(currentData);
+
+		//		SaveBPData(currentData);
+		//	}
+		//}
 
 
 		#endregion
@@ -771,12 +772,14 @@ namespace DspTrarck
 
 		public BPData LoadBPData(string name)
 		{
-			return LoadBPDataJson(name);
+			//return LoadBPDataJson(name);
+			return LoadBPDataBinary(name);
 		}
+
 		public BPData LoadBPDataJson(string name)
 		{
 			BPData bpData = null;
-			string fileName = Path.Combine(bpDir, name);
+			string fileName = Path.Combine(bpDir, name)+".json";
 			if (File.Exists(fileName))
 			{
 				string jsonStr = File.ReadAllText(fileName);
@@ -785,19 +788,37 @@ namespace DspTrarck
 			return bpData;
 		}
 
+		public BPData LoadBPDataBinary(string name)
+		{
+			BPData bpData = null;
+			string fileName = Path.Combine(bpDir, name) + ".bin";
+			if (File.Exists(fileName))
+			{
+				bpData = BPDataReader.ReadBPDataFromFile(fileName);
+			}
+			return bpData;
+		}
+
 		public void SaveBPData(BPData bpData)
 		{
 			if (bpData != null)
 			{
-				SaveBPDataJson(bpData);
+				//SaveBPDataJson(bpData);
+				SaveBPDataBinary(bpData);
 			}
 		}
 
 		public void SaveBPDataJson(BPData bpData)
 		{
-			string fileName = Path.Combine(bpDir, bpData.name);
+			string fileName = Path.Combine(bpDir, bpData.name+".json");
 			string jsonStr = JsonUtility.ToJson(bpData); 
 			File.WriteAllText(fileName, jsonStr);
+		}
+
+		public void SaveBPDataBinary(BPData bpData)
+		{
+			string fileName = Path.Combine(bpDir, bpData.name+".bin");
+			BPDataWriter.WriteBPDataToFile(fileName, bpData);
 		}
 
 		#endregion

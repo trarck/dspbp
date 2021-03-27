@@ -124,7 +124,6 @@ namespace DspTrarck
 		//离地面的距离2
 		public float offsetGround2;
 
-
 		//for miner	   insert
 		public int refCount;
 		public int[] refArr;
@@ -143,6 +142,8 @@ namespace DspTrarck
 			Absolute
 		}
 
+		//数据版本号
+		public int version=1;
 		//名称
 		public string name;
 
@@ -155,15 +156,19 @@ namespace DspTrarck
 		//物体之间的连接
 		public List<ConnectData> connects;
 
-		//保存时的原点位置。
-		public Vector3 originalPos;
-
 		//经纬度
 		public float latitude;
 		public float longitude;
 
 		//x:longitude index,y:latitude index ,z:0
 		public BoundsInt gridBounds;
+
+
+		//保存时的原点位置。
+		public Vector3 originalPos;
+
+		//生成蓝图时的星球半径
+		public float planetRadius;
 
 
 		public BPData()
