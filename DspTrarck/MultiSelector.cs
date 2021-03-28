@@ -9,6 +9,9 @@ namespace DspTrarck
 {
 	public class MultiSelector
 	{
+		//1个小格距离大概3.6/5=0.72  
+		private float m_MaxSelectDistanceSqr = 100*100;
+
 		private bool m_EnableSelect;
 		private bool m_SelectStart;
 		private Vector3 m_MouseStartPosition;
@@ -163,13 +166,19 @@ namespace DspTrarck
 
 					Camera c = Camera.main;
 
-					for (int i = 1; i < planetFactory.entityCursor; ++i)
+					Vector3 selectCenter = m_SelectRange.position;
+					Vector3 groundPos = Vector3.zero;
+					if (TrarckPlugin.Instance.factoryBP.TryScreenPositionToGroundPosition(selectCenter, ref groundPos))
 					{
-						EntityData entityData = planetFactory.entityPool[i];
-						Vector3 screenPos = c.WorldToScreenPoint(entityData.pos);
-						if (IsInSelectRange(screenPos))
+						for (int i = 1; i < planetFactory.entityCursor; ++i)
 						{
-							m_SelectEntities.Add(entityData);
+							EntityData entityData = planetFactory.entityPool[i];
+							Vector3 screenPos = c.WorldToScreenPoint(entityData.pos);
+							//TODO:使用cell index来判断或gcs值
+							if (IsInSelectRange(screenPos) && (groundPos - entityData.pos).sqrMagnitude<=m_MaxSelectDistanceSqr)
+							{
+								m_SelectEntities.Add(entityData);
+							}
 						}
 					}
 				}

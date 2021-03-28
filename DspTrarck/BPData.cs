@@ -160,6 +160,10 @@ namespace DspTrarck
 		public float latitude;
 		public float longitude;
 
+		//金纬度大小
+		public Vector2 gcsMin;
+		public Vector2 gcsMax;
+
 		//x:longitude index,y:latitude index ,z:0
 		public BoundsInt gridBounds;
 

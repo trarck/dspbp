@@ -557,7 +557,7 @@ namespace DspTrarck
 		public Vector2Int GcsToCell(Vector3 gcs)
 		{
 			Vector2 grid = GcsToGrid(gcs);
-			return GirdToCell(grid);
+			return GridToCell(grid);
 		}
 
 		public Vector3 LocalToGcs(Vector3 localPos)
@@ -615,7 +615,7 @@ namespace DspTrarck
 			return new Vector3(longitude, latitude, 0);
 		}
 
-		public Vector2Int GirdToCell(Vector2 grid)
+		public Vector2Int GridToCell(Vector2 grid)
 		{
 			return new Vector2Int(Mathf.RoundToInt(grid.x * 5), Mathf.RoundToInt(grid.y * 5));
 		}
@@ -667,6 +667,62 @@ namespace DspTrarck
 		public Vector3 WorldToLocalPosition(Vector3 worldPos)
 		{
 			return worldPos-kernelPosition;
+		}
+
+		public Vector2Int GcsOffset(Vector3 gcs, Vector2Int offsetCellIndex)
+		{
+			float latGrid = (float)(gcs.y * segment / (Math.PI * 2f));
+			latGrid += offsetCellIndex.y * 0.2f;
+
+			int latCell = LatGridToIndex(latGrid);
+			int longitudeSegment = DetermineLongitudeSegmentCount(latCell, segment);
+
+			float longGrid = (float)(gcs.x / (Math.PI * 2f) * longitudeSegment);
+			longGrid += offsetCellIndex.x * 0.2f;
+
+			return GridToCell(new Vector2(longGrid, latGrid));
+		}
+
+		public Vector2Int GcsOffset(Vector2 grid, float longitude ,Vector2Int offsetCellIndex)
+		{
+			grid.y += offsetCellIndex.y * 0.2f;
+
+			int latCell = LatGridToIndex(grid.x);
+			int longitudeSegment = DetermineLongitudeSegmentCount(latCell, segment);
+
+			grid.x = (float)(longitude / (Math.PI * 2f) * longitudeSegment);
+			Vector2Int cell = GridToCell(grid);
+			cell.x += offsetCellIndex.x;
+
+			return cell;
+		}
+
+		public Vector2Int GcsOffset(Vector2Int cellIndex, float longitude, Vector2Int offsetCellIndex)
+		{
+			cellIndex.y += offsetCellIndex.y;
+			int longitudeSegment = GetLongitudeSegmentCountOfLatitudeCell(cellIndex.y);
+
+			float longGrid = (float)(longitude / (Math.PI * 2f) * longitudeSegment);
+			cellIndex.x = Mathf.RoundToInt(longGrid * 5) + offsetCellIndex.x;
+			return cellIndex;
+		}
+
+		public int GetLongitudeSegmentCountOfLatitudeCell(int latCell)
+		{
+			int latitudeIndex = LatCellToIndex(latCell);
+			return DetermineLongitudeSegmentCount(latitudeIndex, segment);
+		}
+
+		public static int LatGridToIndex(float latGrid)
+		{
+			int latitudeIndex = Mathf.FloorToInt(Mathf.Max(0f, Mathf.Abs(latGrid) - 0.1f));
+			return latitudeIndex;
+		}
+
+		public static int LatCellToIndex(int latCell)
+		{
+			float latGrid = latCell * 0.2f;
+			return LatGridToIndex(latGrid);
 		}
 
 		public static int DetermineLongitudeSegmentCount(int latitudeIndex, int segment)

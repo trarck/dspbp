@@ -20,7 +20,6 @@ namespace DspTrarck
 
 		//建造位置
 		private Vector3 m_BuildPos;
-		private Vector2Int m_BuildCell = Vector2Int.zero;
 
 		private List<BuildPreview> m_BuildPreviews;
 		//当前使用的Entity。和buildpreview一一对应。
@@ -135,7 +134,6 @@ namespace DspTrarck
 		public void Reset()
 		{
 			m_BuildPos = Vector3.zero;
-			m_BuildCell = Vector2Int.zero;
 			m_PrebuildDatas.Clear();
 		}
 
@@ -203,7 +201,7 @@ namespace DspTrarck
 					BuildPreview other = null;
 					foreach (var connect in data.connects)
 					{
-						Debug.LogFormat("[{0}]connect:{1},{2},{3},{4},{5}", connect.isOutput ? "output" : "input", connect.fromObjId, connect.fromSlot, connect.toObjId, connect.toSlot, connect.offset);
+						//Debug.LogFormat("[{0}]connect:{1},{2},{3},{4},{5}", connect.isOutput ? "output" : "input", connect.fromObjId, connect.fromSlot, connect.toObjId, connect.toSlot, connect.offset);
 						if (connect.isOutput)
 						{
 							if (entitiesIdToBuildPreviewMap.TryGetValue(connect.fromObjId, out buildPreview))
@@ -295,27 +293,28 @@ namespace DspTrarck
 		public void UpdateBuildPosition(Vector3 pos)
 		{
 			m_BuildPos = pos;
-			UpdateBuildCell();
-			UpdateBuildPreviewsPosition();
+			UpdateBuildPreviewsPosition(pos);
 		}
 
-		private void UpdateBuildCell()
-		{
-			m_BuildCell = m_PlanetCoordinate.LocalToCell(m_BuildPos);
-			//Debug.LogFormat("UpdateBuildCell:cell={0},pos={1}", m_BuildCell, m_BuildPos);
-		}
-
-		public void UpdateBuildPreviewsPosition()
+		public void UpdateBuildPreviewsPosition(Vector3 pos)
 		{
 			//更新build preview的坐标。
 			if (m_BuildPreviews != null && m_BuildPreviews.Count > 0)
 			{
-				Vector2Int offsetCell = currentData.posType == BPData.PosType.Relative ? m_BuildCell : Vector2Int.zero;
+
+				Vector3 gcs = m_PlanetCoordinate.LocalToGcs(pos);
+
+				Vector2Int buildCell = Vector2Int.zero;
+				if (currentData.posType == BPData.PosType.Relative)
+				{
+					buildCell = m_PlanetCoordinate.GcsToCell(gcs);
+				}
+
 				for (int i = 0; i < m_BuildPreviews.Count; ++i)
 				{
 					BPEntityData entityData = m_CurrentEntities[i];
 					BuildPreview buildPreview = m_BuildPreviews[i];
-					SetBuildPreviewPosition(buildPreview, entityData, offsetCell);
+					SetBuildPreviewPosition(buildPreview, entityData, buildCell, gcs.x);
 					buildPreview.condition = EBuildCondition.Ok;
 				}
 			}
@@ -327,30 +326,20 @@ namespace DspTrarck
 		/// <param name="buildPreview"></param>
 		/// <param name="bpEntity"></param>
 		/// <param name="cellOffset"></param>
-		public void SetBuildPreviewPosition(BuildPreview buildPreview, BPEntityData bpEntity, Vector2Int cellOffset)
+		public void SetBuildPreviewPosition(BuildPreview buildPreview, BPEntityData bpEntity, Vector2Int buildCell,float longitude)
 		{
-			Vector3 posNormal = m_PlanetCoordinate.CellToNormal(bpEntity.gcsCellIndex + cellOffset);
+			Vector2Int entityCell = m_PlanetCoordinate.GcsOffset(buildCell, longitude, bpEntity.gcsCellIndex);
+			Vector3 posNormal = m_PlanetCoordinate.CellToNormal(entityCell);
 			buildPreview.lpos = m_PlanetCoordinate.NormalToGround(posNormal) + posNormal * bpEntity.offsetGround;
 
-			Debug.LogFormat("SetBuildPreviewPosition:cell={0},offset={1},pos={2},proto={3},type={4},entityId={5}", bpEntity.gcsCellIndex , cellOffset,buildPreview.lpos,bpEntity.protoId,bpEntity.type,bpEntity.entityId);
+			//Debug.LogFormat("SetBuildPreviewPosition:cell={0},offset={1},pos={2},proto={3},type={4},entityId={5}", bpEntity.gcsCellIndex , cellOffset,buildPreview.lpos,bpEntity.protoId,bpEntity.type,bpEntity.entityId);
 
 			if (bpEntity.type == BPEntityType.Inserter)
 			{
-				posNormal = m_PlanetCoordinate.CellToNormal(bpEntity.gcsCellIndex2 + cellOffset);
+				entityCell = m_PlanetCoordinate.GcsOffset(buildCell, longitude, bpEntity.gcsCellIndex2);
+				posNormal = m_PlanetCoordinate.CellToNormal(entityCell);
 				buildPreview.lpos2 = m_PlanetCoordinate.NormalToGround(posNormal) + posNormal * bpEntity.offsetGround2;
-				Debug.LogFormat("SetBuildPreviewPosition2:cell={0},offset={1},pos={2}", bpEntity.gcsCellIndex2, cellOffset, buildPreview.lpos2);
-			}
-		}
-
-		public void SetPrebuildDataPosition(PrebuildData prebuildData, BPEntityData bpEntity)
-		{
-			Vector3 normalPos = m_PlanetCoordinate.CellToNormal(bpEntity.gcsCellIndex+m_BuildCell);
-			prebuildData.pos = m_PlanetCoordinate.NormalToGround(normalPos);
-
-			if (bpEntity.type == BPEntityType.Inserter)
-			{
-				normalPos = m_PlanetCoordinate.CellToNormal(bpEntity.gcsCellIndex2 + m_BuildCell);
-				prebuildData.pos2 = m_PlanetCoordinate.NormalToGround(normalPos);
+				//Debug.LogFormat("SetBuildPreviewPosition2:cell={0},offset={1},pos={2}", bpEntity.gcsCellIndex2, cellOffset, buildPreview.lpos2);
 			}
 		}
 		#endregion
@@ -400,7 +389,7 @@ namespace DspTrarck
 		{
 			//直角坐标转换成格子坐标。保留原坐标，比对作用。
 			bpEntity.gcsCellIndex = m_PlanetCoordinate.LocalToCell(bpEntity.pos);
-			Debug.LogFormat("height:{0},{1},{2}", bpEntity.pos.magnitude, planetData.radius,bpEntity.pos.magnitude-planetData.radius);
+			//Debug.LogFormat("height:{0},{1},{2}", bpEntity.pos.magnitude, planetData.radius,bpEntity.pos.magnitude-planetData.radius);
 			bpEntity.offsetGround = Mathf.Max(0, bpEntity.pos.magnitude - planetData.radius-0.2f);
 
 			//if (bpEntity.type == BPEntityType.Inserter)
@@ -623,16 +612,16 @@ namespace DspTrarck
 			{
 				BPEntityData bpEntity = CreateBPEntity(entity);
 				data.entities.Add(bpEntity);
-				Debug.Log(JsonUtility.ToJson(bpEntity));
+				//Debug.Log(JsonUtility.ToJson(bpEntity));
 			}
 
 			//更新连接
 			UpdateEntitiesConnects(data);
 
-			Debug.LogFormat("entities count:{0}", data.entities.Count);
+			//Debug.LogFormat("entities count:{0}", data.entities.Count);
 			UpdateBPDataGrid(data);
-			Debug.LogFormat("coonect count:{0}", data.connects!=null?data.connects.Count:0);
-			Debug.Log(JsonUtility.ToJson(data));
+			//Debug.LogFormat("coonect count:{0}", data.connects!=null?data.connects.Count:0);
+			//Debug.Log(JsonUtility.ToJson(data));
 			return data;
 		}
 
@@ -680,7 +669,7 @@ namespace DspTrarck
 			for (int i = 0; i < 16; ++i)
 			{
 				m_PlanetFactory.ReadObjectConn(bpEntity.entityId, i, out isOutput, out otherObjId, out otherSlot);
-				Debug.LogFormat("both connect:{0},{1},{2},{3},{4}",bpEntity.entityId,i, isOutput, otherObjId, otherSlot);
+				//Debug.LogFormat("both connect:{0},{1},{2},{3},{4}",bpEntity.entityId,i, isOutput, otherObjId, otherSlot);
 
 				if (otherObjId != 0)
 				{
@@ -706,7 +695,7 @@ namespace DspTrarck
 			for (int i = 0; i < 16; ++i)
 			{
 				m_PlanetFactory.ReadObjectConn(bpEntity.entityId, i, out isOutput, out otherObjId, out otherSlot);
-				Debug.LogFormat("output connect:{0},{1},{2},{3},{4}",bpEntity.entityId, i, isOutput, otherObjId, otherSlot);
+				//Debug.LogFormat("output connect:{0},{1},{2},{3},{4}",bpEntity.entityId, i, isOutput, otherObjId, otherSlot);
 
 				//连接是相互的,只记录一种连接。
 				//如果有截断，则忽略连接。复制的时候没办法补齐另一方。
@@ -743,6 +732,9 @@ namespace DspTrarck
 
 		public void UpdateBPRect(BPData data)
 		{
+			Vector2 gcsMin;
+			Vector2 gcsMax;
+
 			//计算包围盒
 			int minX = int.MaxValue, minY = int.MaxValue, maxX = int.MinValue, maxY = int.MinValue;
 			for (int i = 0; i < data.entities.Count; ++i)
@@ -753,9 +745,9 @@ namespace DspTrarck
 				maxX = Math.Max(maxX, entityData.gcsCellIndex.x);
 				maxY = Math.Max(maxY, entityData.gcsCellIndex.y);
 			}
-			data.gridBounds = new BoundsInt(minX, minY, 0, maxX-minX, maxY-minY, 0);
+			data.gridBounds = new BoundsInt(minX, minY, 0, maxX - minX, maxY - minY, 0);
 
-			Debug.LogFormat("Bounds:{0}", data.gridBounds);
+			//Debug.LogFormat("Bounds:{0}", data.gridBounds);
 			//记录经维度
 			Vector3 gcs = m_PlanetCoordinate.CellToGcs(data.gridBounds.min);
 			data.longitude = gcs.x;

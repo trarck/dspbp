@@ -38,7 +38,7 @@ namespace DspTrarck
 		{
 			if (TrarckPlugin.Instance.BPBuild && !__result)
 			{
-				Debug.LogFormat("CheckBuildConditions:{0}", __result);
+				//Debug.LogFormat("CheckBuildConditions:{0}", __result);
 
 				Pose pose = default(Pose);
 
@@ -106,7 +106,7 @@ namespace DspTrarck
 								num3 -= 0.3f;
 							}
 						}
-						Debug.LogFormat("innsert:{0},{1},{2},{3},{4},{5},{6}", magnitude, num2, num3, num4, num5, num6, num7);
+						//Debug.LogFormat("innsert:{0},{1},{2},{3},{4},{5},{6}", magnitude, num2, num3, num4, num5, num6, num7);
 						if (magnitude > num4)
 						{
 							buildPreview.condition = EBuildCondition.TooFar;
@@ -133,7 +133,7 @@ namespace DspTrarck
 								inserterBuildTip.gridLen = buildPreview.refCount;
 							}
 						}
-						Debug.LogFormat("condition:{0},{1}", buildPreview.objId, buildPreview.condition);
+						//Debug.LogFormat("condition:{0},{1}", buildPreview.objId, buildPreview.condition);
 						if (buildPreview.condition != EBuildCondition.Ok)
 						{
 							__result = false;
@@ -159,7 +159,7 @@ namespace DspTrarck
 				__result = true;
 				__instance.cursorText = "点击鼠标建造".Translate();
 				__instance.cursorWarning = false;
-				Debug.LogFormat("CheckBuildConditions:{0}", __result);
+				//Debug.LogFormat("CheckBuildConditions:{0}", __result);
 			}
 		}
 

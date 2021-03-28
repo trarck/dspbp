@@ -72,8 +72,6 @@ namespace DspTrarck
 
 			//FactorySystem fs = pf.factorySystem;
 
-			Debug.Log("HelloWorld");
-
 			m_EnterFactoryBPMode = false;
 
 			m_MultiSelector = new MultiSelector();
