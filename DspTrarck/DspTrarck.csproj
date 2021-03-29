@@ -252,6 +252,7 @@
     <Compile Include="TrarckPlugin.cs" />
     <Compile Include="YH\BinaryHelper.cs" />
     <Compile Include="YH\KeyManager.cs" />
+    <Compile Include="YH\Math.cs" />
     <Compile Include="YH\ReflectionUtils.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

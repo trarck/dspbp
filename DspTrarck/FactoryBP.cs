@@ -392,7 +392,7 @@ namespace DspTrarck
 			//Debug.LogFormat("height:{0},{1},{2}", bpEntity.pos.magnitude, planetData.radius,bpEntity.pos.magnitude-planetData.radius);
 			bpEntity.offsetGround = Mathf.Max(0, bpEntity.pos.magnitude - planetData.radius-0.2f);
 
-			//if (bpEntity.type == BPEntityType.Inserter)
+			if (bpEntity.type == BPEntityType.Inserter)
 			{
 				bpEntity.gcsCellIndex2 = m_PlanetCoordinate.LocalToCell(bpEntity.pos2);
 				bpEntity.offsetGround2 = Mathf.Max(0, bpEntity.pos2.magnitude - planetData.radius - 0.2f);
@@ -720,60 +720,172 @@ namespace DspTrarck
 
 		public void UpdateBPDataGrid(BPData data)
 		{
-			//更新bp的范围
-			UpdateBPRect(data);
-
-			//统一化坐标。只有使用相对坐标才能统一化坐标
 			if (data.posType == BPData.PosType.Relative)
 			{
-				NormalizeGrid(data);
+				//统一化坐标。只有使用相对坐标才能统一化坐标
+				NormalizeBPData(data);
 			}
 		}
 
-		public void UpdateBPRect(BPData data)
+		/// <summary>
+		/// 设置原点。其他entity都是相对原点位置。
+		/// 原点目前使用最小经纬度。后面可以考虑指定。
+		/// </summary>
+		/// <param name="data"></param>
+		public void NormalizeBPData(BPData data)
 		{
-			Vector2 gcsMin;
-			Vector2 gcsMax;
+			Vector3 gcs;
 
-			//计算包围盒
-			int minX = int.MaxValue, minY = int.MaxValue, maxX = int.MinValue, maxY = int.MinValue;
+			float latMin = float.MaxValue, latMax = float.MinValue;
+			float negativeLongMin = float.MaxValue, negativeLongMax = float.MinValue;
+			float positiveLongMin = float.MaxValue, positiveLongMax = float.MinValue;
+
+			int latCellMin = int.MaxValue, latCellMax = int.MinValue;
+			//计算经纬度包围盒
 			for (int i = 0; i < data.entities.Count; ++i)
 			{
 				BPEntityData entityData = data.entities[i];
-				minX = Math.Min(minX, entityData.gcsCellIndex.x);
-				minY = Math.Min(minY, entityData.gcsCellIndex.y);
-				maxX = Math.Max(maxX, entityData.gcsCellIndex.x);
-				maxY = Math.Max(maxY, entityData.gcsCellIndex.y);
+				gcs = m_PlanetCoordinate.LocalToGcs(entityData.pos);
+				latMin = Math.Min(latMin, gcs.y);
+				latMax = Math.Max(latMax, gcs.y);
+
+				latCellMin = Math.Min(latCellMin, entityData.gcsCellIndex.x);
+				latCellMax = Math.Max(latCellMax, entityData.gcsCellIndex.y);
+
+				if (gcs.x < 0)
+				{
+					negativeLongMin = Math.Min(negativeLongMin, gcs.x);
+					negativeLongMax = Math.Max(negativeLongMax, gcs.x);
+				}
+				else
+				{
+					positiveLongMin = Math.Min(positiveLongMin, gcs.x);
+					positiveLongMax = Math.Max(positiveLongMax, gcs.x);
+				}
 			}
-			data.gridBounds = new BoundsInt(minX, minY, 0, maxX - minX, maxY - minY, 0);
+
+			float longMin = 0, longMax = 0;
+			float negativeAdd = 0;
+			bool needFixNegativeLong = false;
+
+			if (negativeLongMin == float.MinValue && negativeLongMax == float.MinValue)
+			{
+				//只在负边
+				longMin = negativeLongMin;
+				longMax = negativeLongMax;
+			}
+			else if (positiveLongMin == float.MaxValue && positiveLongMax == float.MinValue)
+			{
+				//只在正边
+				longMin = positiveLongMin;
+				longMax = positiveLongMax;
+			}
+			else
+			{
+				//pMin   pMax   nMIn   nMax
+				//nMIn nMax  pMin  pMax
+
+				//跨越
+				//pMax -> nMin
+				float maxDistance = 2 * Mathf.PI + negativeLongMin - positiveLongMax;
+				//nMax->pMin
+				float minDistance = positiveLongMin - negativeLongMax;
+
+				if (minDistance <= maxDistance)
+				{
+					longMin = negativeLongMin;
+					longMax = positiveLongMax;
+				}
+				else
+				{
+					longMin = positiveLongMin;
+					longMax = negativeLongMax + 2 * Mathf.PI;
+
+					needFixNegativeLong = true;
+					negativeAdd = 2 * Mathf.PI;
+				}
+			}
+
+			//fix cell index
+			for (int i = 0; i < data.entities.Count; ++i)
+			{
+				BPEntityData entityData = data.entities[i];
+				gcs = m_PlanetCoordinate.LocalToGcs(entityData.pos);
+				if (needFixNegativeLong && gcs.x < 0)
+				{
+					gcs.x += negativeAdd;
+				}
+				gcs.x -= longMin;
+				//这里要保证维度是原来的维度。这里的经度已经是偏移的。转换成cell后，就是偏移的cell。
+				Vector2Int cellOffset = m_PlanetCoordinate.GcsToCell(gcs);
+				//偏移维度
+				cellOffset.y -= latCellMin;
+				entityData.gcsCellIndex = cellOffset;
+
+				//只有爪子有第二个位置
+				if (entityData.type == BPEntityType.Inserter)
+				{
+					gcs = m_PlanetCoordinate.LocalToGcs(entityData.pos2);
+					if (needFixNegativeLong && gcs.x < 0)
+					{
+						gcs.x += negativeAdd;
+					}
+					gcs.x -= longMin;
+					cellOffset = m_PlanetCoordinate.GcsToCell(gcs);
+					cellOffset.y -= latCellMin;
+					entityData.gcsCellIndex2 = cellOffset;
+				}
+			}
 
 			//Debug.LogFormat("Bounds:{0}", data.gridBounds);
 			//记录经维度
-			Vector3 gcs = m_PlanetCoordinate.CellToGcs(data.gridBounds.min);
-			data.longitude = gcs.x;
-			data.latitude = gcs.y;
+			data.longitude = longMin;
+			data.latitude = latMin;
 
 			//记录原位置
-			Vector3 normalPos = m_PlanetCoordinate.GcsToNormal(gcs);
+			Vector3 normalPos = m_PlanetCoordinate.GcsToNormal(data.longitude, data.latitude);
 			data.originalPos = m_PlanetCoordinate.NormalToGround(normalPos);
 		}
 
-		//把bp的包围合，左上角设置成0，0
-		public void NormalizeGrid(BPData data)
+		//未完成
+		public void NormalizeBPData(BPData data, Vector3 originalPos)
 		{
+			data.originalPos = originalPos;
+			Vector3 originalGcs = m_PlanetCoordinate.LocalToGcs(originalPos);
+			data.longitude = originalGcs.x;
+			data.latitude = originalGcs.y;
+
+			Vector2Int originalCell = m_PlanetCoordinate.GcsToCell(originalGcs);
+
+			Vector3 gcs;
 			for (int i = 0; i < data.entities.Count; ++i)
 			{
 				BPEntityData entityData = data.entities[i];
-				entityData.gcsCellIndex.x -= data.gridBounds.xMin;
-				entityData.gcsCellIndex.y -= data.gridBounds.yMin;
+				gcs = m_PlanetCoordinate.LocalToGcs(entityData.pos);
+				//偏移经度
+				gcs.x = YH.YHMath.DeltaRadian(gcs.x, originalGcs.x);
+				//这里要保证维度是原来的维度。
+				//这里的经度已经是偏移的。转换成cell后，就是偏移的cell。
+				Vector2Int cellOffset = m_PlanetCoordinate.GcsToCell(gcs);
+				//偏移维度
+				cellOffset.y -= originalCell.y;
+				entityData.gcsCellIndex = cellOffset;
 
-				entityData.gcsCellIndex2.x -= data.gridBounds.xMin;
-				entityData.gcsCellIndex2.y -= data.gridBounds.yMin;
+				//只有爪子有第二个位置
+				if (entityData.type == BPEntityType.Inserter)
+				{
+					gcs = m_PlanetCoordinate.LocalToGcs(entityData.pos2);
+					//偏移经度
+					gcs.x = YH.YHMath.DeltaRadian(gcs.x, originalGcs.x);
+					//这里要保证维度是原来的维度。
+					//这里的经度已经是偏移的。转换成cell后，就是偏移的cell。
+					cellOffset = m_PlanetCoordinate.GcsToCell(gcs);
+					//偏移维度
+					cellOffset.y -= originalCell.y;
+					entityData.gcsCellIndex2 = cellOffset;
+				}
 			}
-
-			data.gridBounds.position = Vector3Int.zero;
 		}
-
 
 		public BPData LoadBPData(string name)
 		{
