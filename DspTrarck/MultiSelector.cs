@@ -9,14 +9,14 @@ namespace DspTrarck
 {
 	public class MultiSelector
 	{
-		//1个小格距离大概3.6/5=0.72  
-		private float m_MaxSelectDistanceSqr = 100*100;
-
 		private bool m_EnableSelect;
 		private bool m_SelectStart;
 		private Vector3 m_MouseStartPosition;
 		private Vector3 m_MouseEndPosition;
 		private Rect m_SelectRange;
+		private bool m_SelectGroundActive;
+		private Rect m_SelectGcsRange;
+		private bool m_NeedRepeatLongitude;
 		private List<EntityData> m_SelectEntities;
 
 		private Texture2D m_BlankTexture;
@@ -136,13 +136,68 @@ namespace DspTrarck
 
 			float yMin = Mathf.Min(m_MouseStartPosition.y, m_MouseEndPosition.y);
 			float yMax = Mathf.Max(m_MouseStartPosition.y, m_MouseEndPosition.y);
-
 			m_SelectRange = Rect.MinMaxRect(xMin, yMin, xMax, yMax);
+
+			m_SelectGroundActive = false;
+			Vector3 startGroundPos = Vector3.zero;
+			FactoryBP factoryBP = TrarckPlugin.Instance.factoryBP;
+			if (factoryBP.TryScreenPositionToGroundPosition(m_MouseStartPosition, ref startGroundPos))
+			{
+				Vector3 endGroundPos = Vector3.zero;
+				if (factoryBP.TryScreenPositionToGroundPosition(m_MouseEndPosition, ref endGroundPos))
+				{
+					m_SelectGroundActive = true;
+					Vector3 startGcs = factoryBP.planetCoordinate.LocalToGcs(startGroundPos);
+					Vector3 endGcs = factoryBP.planetCoordinate.LocalToGcs(endPosition);
+
+					float latMin = Mathf.Min(startGcs.y, endGcs.y);
+					float latMax = Mathf.Max(startGcs.y, endGcs.y);
+
+					float longMin, longMax;
+
+
+					m_NeedRepeatLongitude = false;
+					if (startGcs.x * endGcs.x > 0)
+					{
+						//同向
+						longMin = Mathf.Min(startGcs.x, endGcs.x);
+						longMax = Mathf.Max(startGcs.x, endGcs.x);
+					}
+					else
+					{
+						//跨越正负
+						longMin = Mathf.Min(startGcs.x, endGcs.x);
+						longMax = Mathf.Max(startGcs.x, endGcs.x);
+						if (longMax - longMin > Mathf.PI)
+						{
+							float tempMax = longMin + 2 * Mathf.PI;
+							longMin = longMax;
+							longMax = tempMax;
+
+							m_NeedRepeatLongitude = true;
+						}
+					}
+
+					m_SelectGcsRange = new Rect(longMin, latMin, longMax - longMin, latMax - latMin);
+				}
+			}
 		}
 
 		private bool IsInSelectRange(Vector3 pos)
 		{
 			return m_SelectRange.Contains(new Vector2(pos.x, pos.y));
+		}
+
+		private bool IsInGroundRange(Vector3 pos)
+		{
+			Vector2 gcs = TrarckPlugin.Instance.factoryBP.planetCoordinate.LocalToGcs(pos);
+			
+			if (m_NeedRepeatLongitude)
+			{
+				 gcs.x=Mathf.Repeat(gcs.x, 2 * Mathf.PI);
+			}
+
+			return m_SelectGcsRange.Contains(gcs);
 		}
 
 		private void CalcSelectEnties()
@@ -162,20 +217,16 @@ namespace DspTrarck
 				PlanetFactory planetFactory = planetData.factory;
 				if (planetFactory != null)
 				{
-					FactorySystem factorySystem = planetFactory.factorySystem;
-
 					Camera c = Camera.main;
 
-					Vector3 selectCenter = m_SelectRange.position;
-					Vector3 groundPos = Vector3.zero;
-					if (TrarckPlugin.Instance.factoryBP.TryScreenPositionToGroundPosition(selectCenter, ref groundPos))
+					if (m_SelectGroundActive)
 					{
 						for (int i = 1; i < planetFactory.entityCursor; ++i)
 						{
 							EntityData entityData = planetFactory.entityPool[i];
 							Vector3 screenPos = c.WorldToScreenPoint(entityData.pos);
 							//TODO:使用cell index来判断或gcs值
-							if (IsInSelectRange(screenPos) && (groundPos - entityData.pos).sqrMagnitude<=m_MaxSelectDistanceSqr)
+							if (IsInSelectRange(screenPos) && IsInGroundRange(entityData.pos))
 							{
 								m_SelectEntities.Add(entityData);
 							}
