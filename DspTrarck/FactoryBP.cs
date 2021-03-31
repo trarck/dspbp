@@ -332,7 +332,7 @@ namespace DspTrarck
 			Vector3 posNormal = m_PlanetCoordinate.CellToNormal(entityCell);
 			buildPreview.lpos = m_PlanetCoordinate.NormalToGround(posNormal) + posNormal * bpEntity.offsetGround;
 
-			//Debug.LogFormat("SetBuildPreviewPosition:cell={0},offset={1},pos={2},proto={3},type={4},entityId={5}", bpEntity.gcsCellIndex , cellOffset,buildPreview.lpos,bpEntity.protoId,bpEntity.type,bpEntity.entityId);
+			Debug.LogFormat("SetBuildPreviewPosition:cell={0},offset={1},pos={2},proto={3},type={4},entityId={5}", bpEntity.gcsCellIndex , entityCell, buildPreview.lpos,bpEntity.protoId,bpEntity.type,bpEntity.entityId);
 
 			if (bpEntity.type == BPEntityType.Inserter)
 			{
@@ -749,7 +749,7 @@ namespace DspTrarck
 				latMin = Math.Min(latMin, gcs.y);
 				latMax = Math.Max(latMax, gcs.y);
 
-				latCellMin = Math.Min(latCellMin, entityData.gcsCellIndex.x);
+				latCellMin = Math.Min(latCellMin, entityData.gcsCellIndex.y);
 				latCellMax = Math.Max(latCellMax, entityData.gcsCellIndex.y);
 
 				if (gcs.x < 0)
@@ -764,21 +764,23 @@ namespace DspTrarck
 				}
 			}
 
+			Debug.LogFormat("lat:{0},{1}", latCellMin, latCellMax);
+
 			float longMin = 0, longMax = 0;
 			float negativeAdd = 0;
 			bool needFixNegativeLong = false;
 
-			if (negativeLongMin == float.MinValue && negativeLongMax == float.MinValue)
-			{
-				//只在负边
-				longMin = negativeLongMin;
-				longMax = negativeLongMax;
-			}
-			else if (positiveLongMin == float.MaxValue && positiveLongMax == float.MinValue)
+			if (negativeLongMin == float.MaxValue && negativeLongMax == float.MinValue)
 			{
 				//只在正边
 				longMin = positiveLongMin;
 				longMax = positiveLongMax;
+			}
+			else if (positiveLongMin == float.MaxValue && positiveLongMax == float.MinValue)
+			{
+				//只在负边
+				longMin = negativeLongMin;
+				longMax = negativeLongMax;
 			}
 			else
 			{
@@ -806,6 +808,8 @@ namespace DspTrarck
 				}
 			}
 
+			Debug.LogFormat("rect:{0},{1},{2},{3}", positiveLongMin, positiveLongMax, negativeLongMin, negativeLongMax);
+
 			//fix cell index
 			for (int i = 0; i < data.entities.Count; ++i)
 			{
@@ -818,6 +822,7 @@ namespace DspTrarck
 				gcs.x -= longMin;
 				//这里要保证维度是原来的维度。这里的经度已经是偏移的。转换成cell后，就是偏移的cell。
 				Vector2Int cellOffset = m_PlanetCoordinate.GcsToCell(gcs);
+				Debug.LogFormat("e:{0},{1},{2}", gcs, cellOffset, latCellMin);
 				//偏移维度
 				cellOffset.y -= latCellMin;
 				entityData.gcsCellIndex = cellOffset;
