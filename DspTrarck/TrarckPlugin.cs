@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Reflection;
 using BepInEx;
 using HarmonyLib;
 using UnityEngine;
 using YH.MyInput;
+using YH.Log;
 
 namespace DspTrarck
 {
@@ -121,13 +121,13 @@ namespace DspTrarck
 
 				if (m_CopyEntitiesWithoutBeltKey.IsDown())
 				{
-					Debug.Log("On copy entities without belt Key down");
+					YHDebug.Log("On copy entities without belt Key down");
 					CopyEntitiesWithoutBelt();
 				}
 
 				if (m_BuildEntitiesKey.IsDown())
 				{
-					Debug.Log("On build bp entities Key down");
+					YHDebug.Log("On build bp entities Key down");
 					//build
 					CreateBuildPreviews(Input.mousePosition);
 					m_BPBuild = true;
@@ -137,7 +137,7 @@ namespace DspTrarck
 
 				if (m_SaveBPKey.IsDown())
 				{
-					Debug.Log("On save bp Key down");
+					YHDebug.Log("On save bp Key down");
 					//save
 					SaveCurrentBPData();
 				}
@@ -210,11 +210,11 @@ namespace DspTrarck
 
 		private void UpdateBuildPreviewsPosition(Vector3 mousePos)
 		{
-			Debug.LogFormat("UpdateBuildPreviewsPosition:mouse pos :{0}", mousePos);
+			YHDebug.LogFormat("UpdateBuildPreviewsPosition:mouse pos :{0}", mousePos);
 			Vector3 groundPos=Vector3.zero;
 			if (m_FactoryBP.TryScreenPositionToGroundPosition(mousePos, ref groundPos))
 			{
-				Debug.LogFormat("UpdateBuildPreviewsPosition:ground pos :{0}", groundPos);
+				YHDebug.LogFormat("UpdateBuildPreviewsPosition:ground pos :{0}", groundPos);
 				m_FactoryBP.UpdateBuildPosition(groundPos);
 			}
 		}

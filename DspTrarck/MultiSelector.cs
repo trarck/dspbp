@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Text;
 using UnityEngine;
+using YH.Log;
 
 namespace DspTrarck
 {
@@ -108,7 +107,9 @@ namespace DspTrarck
 					m_MouseEndPosition = Input.mousePosition;
 					CalcSelectRange();
 					CalcSelectEnties();
+#if DEBUG
 					ShowDebugInfo();
+#endif
 				}
 
 				if (m_SelectStart)
@@ -219,7 +220,7 @@ namespace DspTrarck
 				{
 					Camera c = Camera.main;
 
-					Debug.LogFormat("CalcSelectEntities:active:{0},screen:{1},gcs:{2}", m_SelectGroundActive,m_SelectRange,m_SelectGcsRange);
+					YHDebug.LogFormat("CalcSelectEntities:active:{0},screen:{1},gcs:{2}", m_SelectGroundActive,m_SelectRange,m_SelectGcsRange);
 					if (m_SelectGroundActive)
 					{
 						for (int i = 1; i < planetFactory.entityCursor; ++i)
@@ -227,7 +228,7 @@ namespace DspTrarck
 							EntityData entityData = planetFactory.entityPool[i];
 							Vector3 screenPos = c.WorldToScreenPoint(entityData.pos);
 							//TODO:使用cell index来判断或gcs值
-							//Debug.LogFormat("CalcSelectEntities:screen:{0}={1},gcs:{2}={3}", screenPos, IsInSelectRange(screenPos),TrarckPlugin.Instance.factoryBP.planetCoordinate.LocalToGcs(entityData.pos), IsInGroundRange(entityData.pos));
+							YHDebug.LogFormat("CalcSelectEntities:screen:{0}={1},gcs:{2}={3}", screenPos, IsInSelectRange(screenPos),TrarckPlugin.Instance.factoryBP.planetCoordinate.LocalToGcs(entityData.pos), IsInGroundRange(entityData.pos));
 							if (IsInSelectRange(screenPos) && IsInGroundRange(entityData.pos))
 							{
 								m_SelectEntities.Add(entityData);
@@ -236,11 +237,11 @@ namespace DspTrarck
 					}
 				}
 
-				Debug.LogFormat("Select enties count:{0}", m_SelectEntities.Count);
-				foreach (var ed in m_SelectEntities)
-				{
-					Debug.LogFormat("Select entry:{0}", ed.protoId);
-				}
+				//Debug.LogFormat("Select enties count:{0}", m_SelectEntities.Count);
+				//foreach (var ed in m_SelectEntities)
+				//{
+				//	Debug.LogFormat("Select entry:{0}", ed.protoId);
+				//}
 
 			}
 

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
+using YH.Log;
 
 namespace DspTrarck
 {
@@ -332,14 +333,14 @@ namespace DspTrarck
 			Vector3 posNormal = m_PlanetCoordinate.CellToNormal(entityCell);
 			buildPreview.lpos = m_PlanetCoordinate.NormalToGround(posNormal) + posNormal * bpEntity.offsetGround;
 
-			//Debug.LogFormat("SetBuildPreviewPosition:cell={0},offset={1},pos={2},proto={3},type={4},entityId={5}", bpEntity.gcsCellIndex , entityCell, buildPreview.lpos,bpEntity.protoId,bpEntity.type,bpEntity.entityId);
+			YHDebug.LogFormat("SetBuildPreviewPosition:cell={0},offset={1},pos={2},proto={3},type={4},entityId={5}", bpEntity.gcsCellIndex , entityCell, buildPreview.lpos,bpEntity.protoId,bpEntity.type,bpEntity.entityId);
 
 			if (bpEntity.type == BPEntityType.Inserter)
 			{
 				entityCell = m_PlanetCoordinate.GcsOffset(buildCell, longitude, bpEntity.gcsCellIndex2);
 				posNormal = m_PlanetCoordinate.CellToNormal(entityCell);
 				buildPreview.lpos2 = m_PlanetCoordinate.NormalToGround(posNormal) + posNormal * bpEntity.offsetGround2;
-				//Debug.LogFormat("SetBuildPreviewPosition2:cell={0},offset={1},pos={2}", bpEntity.gcsCellIndex2, cellOffset, buildPreview.lpos2);
+				YHDebug.LogFormat("SetBuildPreviewPosition2:cell={0},offset={1},pos={2},proto={3},type={4},entityId={5}", bpEntity.gcsCellIndex2, entityCell, buildPreview.lpos2, bpEntity.protoId, bpEntity.type, bpEntity.entityId);
 			}
 		}
 		#endregion
@@ -618,7 +619,7 @@ namespace DspTrarck
 			//更新连接
 			UpdateEntitiesConnects(data);
 
-			//Debug.LogFormat("entities count:{0}", data.entities.Count);
+			YHDebug.LogFormat("entities count:{0}", data.entities.Count);
 			UpdateBPDataGrid(data);
 			//Debug.LogFormat("coonect count:{0}", data.connects!=null?data.connects.Count:0);
 			//Debug.Log(JsonUtility.ToJson(data));
