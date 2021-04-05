@@ -71,6 +71,10 @@ namespace DspTrarck
 							zero = (inputIsBelt && !outputIsBelt) ? buildPreview.output.lpos :
 								((inputIsBelt || !outputIsBelt) ? ((buildPreview.input.lpos + buildPreview.output.lpos) * 0.5f) : buildPreview.input.lpos);
 						}
+						else if (buildPreview.input == null & buildPreview.output==null)
+						{
+							zero = (buildPreview.lpos + buildPreview.lpos2) * 0.5f;
+						}
 						else if (buildPreview.input == null)
 						{
 							zero = (buildPreview.lpos + buildPreview.output.lpos) * 0.5f;

@@ -1,0 +1,209 @@
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using UnityEngine;
+
+namespace DspTrarck
+{
+    public class FactoryBPUI
+    {
+        private Rect m_UINormalRect = new Rect(30, 160, 200, 300);
+        private Rect m_UIMinilRect = new Rect(5, 200, 30, 30);
+
+        private string m_BPName="";
+
+        private bool m_CopyAdd;
+        private bool m_CopyWithoutBelt;
+
+        private List<string> m_BPFiles;
+
+        private Vector2 m_BPFilesScrollPos;
+
+        private bool m_Mini = false;
+
+        public FactoryBP factoryBP;
+
+        public string bpName
+        {
+            get
+            {
+                return m_BPName;
+            }
+            set
+            {
+                m_BPName = value;
+            }
+        }
+
+        public bool isCopyAdd
+        {
+            get
+            {
+                return m_CopyAdd;
+            }
+            set
+            {
+                m_CopyAdd = value;
+            }
+        }
+
+        public bool isCopyWithoutBelt => m_CopyWithoutBelt;
+
+        public void Init(FactoryBP fbp)
+        {
+            factoryBP = fbp;
+        }
+
+        public void Clear()
+        {
+            m_BPName = "";
+            m_CopyAdd = false;
+            m_CopyWithoutBelt = false;
+            if (m_BPFiles != null)
+            {
+                m_BPFiles.Clear();
+            }
+
+            m_BPFilesScrollPos = Vector2.zero;
+            m_Mini = false;
+
+        }
+
+        public void OnGUI()
+        {
+            if (m_Mini)
+            {
+                ShowMIni();
+            }
+            else
+            {
+                ShowNormal();
+            }
+        }
+
+        private void ShowMIni()
+        {
+            GUIStyle miniBtnSytle = new GUIStyle(GUI.skin.label);
+            miniBtnSytle.fontSize = 28;
+            if (GUI.Button(m_UIMinilRect, ">", miniBtnSytle))
+            {
+                m_Mini = false;
+            }
+        }
+
+        private void ShowNormal()
+        {
+            GUIStyle miniBtnSytle = new GUIStyle(GUI.skin.label);
+            miniBtnSytle.fontSize = 28;
+            if (GUI.Button(m_UIMinilRect, "<", miniBtnSytle))
+            {
+                m_Mini = true;
+            }
+
+            GUILayout.BeginArea(m_UINormalRect, GUI.skin.box);
+            {
+                //BP
+                GUILayout.BeginHorizontal();
+                {
+                    GUILayout.Label("BP", GUILayout.ExpandWidth(false));
+                    m_BPName = GUILayout.TextField(m_BPName, GUILayout.Width(100));
+                }
+                GUILayout.EndHorizontal();
+
+                GUILayout.Space(5);
+
+                //copy
+                GUILayout.BeginHorizontal();
+                {
+                    GUILayout.Label("Copy");
+                    m_CopyAdd = GUILayout.Toggle(m_CopyAdd, "Add");
+                    m_CopyWithoutBelt = GUILayout.Toggle(m_CopyWithoutBelt, "NoBeil");
+                }
+                GUILayout.EndHorizontal();
+
+                //action
+                GUILayout.BeginHorizontal();
+                {
+                    if (GUILayout.Button("Save"))
+                    {
+                        SaveBPFile();
+                    }
+
+                    if (GUILayout.Button("Reresh"))
+                    {
+                        RefreshBPFiles();
+                    }
+                }
+                GUILayout.EndHorizontal();
+
+                //bpfiles
+                ShowBPFiles();
+            }
+            GUILayout.EndArea();
+        }
+
+        private void ShowBPFiles()
+        {
+            if (m_BPFiles != null && m_BPFiles.Count > 0)
+            {
+                m_BPFilesScrollPos = GUILayout.BeginScrollView(m_BPFilesScrollPos, GUILayout.Height(200));
+
+                GUIStyle labelStyle = new GUIStyle(GUI.skin.label);
+                labelStyle.clipping = TextClipping.Clip;
+                for (int i = 0; i < m_BPFiles.Count; ++i)
+                {
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label(m_BPFiles[i], labelStyle, GUILayout.MaxWidth(160));
+                    if (GUILayout.Button("L"))
+                    {
+                        LoadBPFile(m_BPFiles[i]);
+                    }
+                    GUILayout.EndHorizontal();
+                }
+                GUILayout.EndScrollView();
+            }
+
+        }
+
+        public void SaveBPFile()
+        {
+            if (factoryBP.currentData == null)
+            {
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(m_BPName))
+            {
+                factoryBP.currentData.name = m_BPName;
+            }
+
+            factoryBP.SaveBPData(factoryBP.currentData);
+        }
+
+        private void LoadBPFile(string bpFile)
+        {
+            m_BPName = Path.GetFileNameWithoutExtension(bpFile);
+            factoryBP.LoadCurrentData(bpFile);
+        }
+
+        private void RefreshBPFiles()
+        {
+            if (m_BPFiles == null)
+            {
+                m_BPFiles = new List<string>();
+            }
+            else
+            {
+                m_BPFiles.Clear();
+            }
+
+            string[] files = Directory.GetFiles(factoryBP.bpDir);
+            foreach (var f in files)
+            {
+                m_BPFiles.Add(Path.GetFileName(f));
+            }
+
+        }
+    }
+
+}

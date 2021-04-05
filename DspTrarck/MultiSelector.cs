@@ -21,6 +21,8 @@ namespace DspTrarck
 		private Texture2D m_BlankTexture;
 		private Color m_LineColor = Color.green;
 
+		public FactoryBP factoryBP;
+
 		public bool enableSelect
 		{
 			get
@@ -74,9 +76,18 @@ namespace DspTrarck
 			}
 		}
 
-		public void Init()
+		public void Init(FactoryBP fbp=null)
 		{
+			factoryBP = fbp;
 			m_BlankTexture = CreateDummyTex();
+		}
+
+		public void Clear()
+		{
+			m_SelectStart = false;
+			ClearSelectData();
+			m_SelectGroundActive = false;
+			m_NeedRepeatLongitude = false;
 		}
 
 		public void ClearSelectData()
@@ -88,20 +99,21 @@ namespace DspTrarck
 			m_MouseStartPosition = Vector3.zero;
 			m_MouseEndPosition = Vector3.zero;
 			m_SelectRange = Rect.zero;
+			m_SelectGcsRange = Rect.zero;
 		}
 
 		public void Update()
 		{
 			if (m_EnableSelect)
 			{
-				if (Input.GetMouseButtonDown(0))
+				if (Input.GetMouseButtonDown(0) && Input.GetKey(KeyCode.LeftControl))
 				{
 					ClearSelectData();
 					m_SelectStart = true;
 					m_MouseStartPosition = Input.mousePosition;
 				}
 
-				if (Input.GetMouseButtonUp(0))
+				if (Input.GetMouseButtonUp(0) && m_SelectStart)
 				{
 					m_SelectStart = false;
 					m_MouseEndPosition = Input.mousePosition;
@@ -141,7 +153,7 @@ namespace DspTrarck
 
 			m_SelectGroundActive = false;
 			Vector3 startGroundPos = Vector3.zero;
-			FactoryBP factoryBP = TrarckPlugin.Instance.factoryBP;
+
 			if (factoryBP.TryScreenPositionToGroundPosition(m_MouseStartPosition, ref startGroundPos))
 			{
 				Vector3 endGroundPos = Vector3.zero;
@@ -191,7 +203,7 @@ namespace DspTrarck
 
 		private bool IsInGroundRange(Vector3 pos)
 		{
-			Vector2 gcs = TrarckPlugin.Instance.factoryBP.planetCoordinate.LocalToGcs(pos);
+			Vector2 gcs = factoryBP.planetCoordinate.LocalToGcs(pos);
 			
 			if (m_NeedRepeatLongitude)
 			{
@@ -228,7 +240,7 @@ namespace DspTrarck
 							EntityData entityData = planetFactory.entityPool[i];
 							Vector3 screenPos = c.WorldToScreenPoint(entityData.pos);
 							//TODO:使用cell index来判断或gcs值
-							YHDebug.LogFormat("CalcSelectEntities:screen:{0}={1},gcs:{2}={3}", screenPos, IsInSelectRange(screenPos),TrarckPlugin.Instance.factoryBP.planetCoordinate.LocalToGcs(entityData.pos), IsInGroundRange(entityData.pos));
+							YHDebug.LogFormat("CalcSelectEntities:screen:{0}={1},gcs:{2}={3}", screenPos, IsInSelectRange(screenPos), factoryBP.planetCoordinate.LocalToGcs(entityData.pos), IsInGroundRange(entityData.pos));
 							if (IsInSelectRange(screenPos) && IsInGroundRange(entityData.pos))
 							{
 								m_SelectEntities.Add(entityData);
