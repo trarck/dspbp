@@ -35,7 +35,7 @@ namespace DspTrarck
 			bpEntityData.type = (BPEntityType)reader.ReadByte();
 			BinaryHelper.TryReadVector3(reader, ref bpEntityData.pos);
 			BinaryHelper.TryReadQuaternion(reader, ref bpEntityData.rot);
-			BinaryHelper.TryReadVector2Int(reader, ref bpEntityData.gcsCellIndex);
+			BinaryHelper.TryReadVector2(reader, ref bpEntityData.grid);
 			bpEntityData.offsetGround = reader.ReadSingle();
 			bpEntityData.pickOffset = reader.ReadInt16();
 			bpEntityData.insertOffset = reader.ReadInt16();
@@ -43,7 +43,7 @@ namespace DspTrarck
 			bpEntityData.filterId = reader.ReadInt32();
 			BinaryHelper.TryReadVector3(reader, ref bpEntityData.pos2);
 			BinaryHelper.TryReadQuaternion(reader, ref bpEntityData.rot2);
-			BinaryHelper.TryReadVector2Int(reader, ref bpEntityData.gcsCellIndex2);
+			BinaryHelper.TryReadVector2(reader, ref bpEntityData.grid2);
 			bpEntityData.offsetGround2 = reader.ReadSingle();
 
 			bpEntityData.refArr = BinaryHelper.ReadIntArray(reader, ref bpEntityData.refCount);

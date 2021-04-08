@@ -34,7 +34,7 @@ namespace DspTrarck
 			writer.Write((byte)bpEntityData.type);
 			BinaryHelper.WriteVector3(writer, ref bpEntityData.pos);
 			BinaryHelper.WriteQuaternion(writer, ref bpEntityData.rot);
-			BinaryHelper.WriteVector2Int(writer, ref bpEntityData.gcsCellIndex);
+			BinaryHelper.WriteVector2(writer, ref bpEntityData.grid);
 
 			writer.Write(bpEntityData.offsetGround);
 			writer.Write(bpEntityData.pickOffset );
@@ -44,7 +44,7 @@ namespace DspTrarck
 
 			BinaryHelper.WriteVector3(writer, ref bpEntityData.pos2);
 			BinaryHelper.WriteQuaternion(writer, ref bpEntityData.rot2);
-			BinaryHelper.WriteVector2Int(writer, ref bpEntityData.gcsCellIndex2);
+			BinaryHelper.WriteVector2(writer, ref bpEntityData.grid2);
 			writer.Write(bpEntityData.offsetGround2);
 			BinaryHelper.WriteIntArr(writer, bpEntityData.refArr,0,bpEntityData.refCount);
 		}

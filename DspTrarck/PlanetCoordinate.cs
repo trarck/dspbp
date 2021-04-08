@@ -620,6 +620,12 @@ namespace DspTrarck
 			return new Vector2Int(Mathf.RoundToInt(grid.x * 5), Mathf.RoundToInt(grid.y * 5));
 		}
 
+		public Vector3 GridToNormal(Vector2 grid)
+		{
+			Vector3 gcs = GridToGcs(grid);
+			return GcsToNormal(gcs);
+		}
+
 		public Vector2 CellToGrid(int longIdx, int latIdx)
 		{
 			return new Vector2(longIdx * 0.2f, latIdx * 0.2f);
@@ -669,42 +675,31 @@ namespace DspTrarck
 			return worldPos-kernelPosition;
 		}
 
-		public Vector2Int GcsOffset(Vector3 gcs, Vector2Int offsetCellIndex)
+		public Vector2 GscApplyGridOffset(Vector3 gcs, Vector2 offsetGrid)
 		{
 			float latGrid = (float)(gcs.y * segment / (Math.PI * 2f));
-			latGrid += offsetCellIndex.y * 0.2f;
+			latGrid += offsetGrid.y;
 
-			int latCell = LatGridToIndex(latGrid);
-			int longitudeSegment = DetermineLongitudeSegmentCount(latCell, segment);
+			int latIndex = LatGridToIndex(latGrid);
+			int longitudeSegment = DetermineLongitudeSegmentCount(latIndex, segment);
 
 			float longGrid = (float)(gcs.x / (Math.PI * 2f) * longitudeSegment);
-			longGrid += offsetCellIndex.x * 0.2f;
+			longGrid += offsetGrid.x;
 
-			return GridToCell(new Vector2(longGrid, latGrid));
+			return new Vector2(longGrid, latGrid);
 		}
 
-		public Vector2Int GcsOffset(Vector2 grid, float longitude ,Vector2Int offsetCellIndex)
+		public Vector2  GscApplyGridOffset(Vector2 grid, float longitude ,Vector2  offsetGrid)
 		{
-			grid.y += offsetCellIndex.y * 0.2f;
+			grid.y += offsetGrid.y;
 
-			int latCell = LatGridToIndex(grid.x);
-			int longitudeSegment = DetermineLongitudeSegmentCount(latCell, segment);
+			int latIndex = LatGridToIndex(grid.x);
+			int longitudeSegment = DetermineLongitudeSegmentCount(latIndex, segment);
 
 			grid.x = (float)(longitude / (Math.PI * 2f) * longitudeSegment);
-			Vector2Int cell = GridToCell(grid);
-			cell.x += offsetCellIndex.x;
+			grid.x += offsetGrid.x;
 
-			return cell;
-		}
-
-		public Vector2Int GcsOffset(Vector2Int cellIndex, float longitude, Vector2Int offsetCellIndex)
-		{
-			cellIndex.y += offsetCellIndex.y;
-			int longitudeSegment = GetLongitudeSegmentCountOfLatitudeCell(cellIndex.y);
-
-			float longGrid = (float)(longitude / (Math.PI * 2f) * longitudeSegment);
-			cellIndex.x = Mathf.RoundToInt(longGrid * 5) + offsetCellIndex.x;
-			return cellIndex;
+			return grid;
 		}
 
 		public int GetLongitudeSegmentCountOfLatitudeCell(int latCell)

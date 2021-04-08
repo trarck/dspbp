@@ -14,6 +14,14 @@ namespace YH
 			return true;
 		}
 
+		public static bool TryReadVector2(BinaryReader reader, ref Vector2 v)
+		{
+			v.x = reader.ReadSingle();
+			v.y = reader.ReadSingle();
+			return true;
+		}
+
+
 		public static bool TryReadVector2Int(BinaryReader reader, ref Vector2Int v)
 		{
 			v.x = reader.ReadInt32();
@@ -73,6 +81,12 @@ namespace YH
 			writer.Write(v.x);
 			writer.Write(v.y);
 			writer.Write(v.z);
+		}
+
+		public static void WriteVector2(BinaryWriter writer, ref Vector2 v)
+		{
+			writer.Write(v.x);
+			writer.Write(v.y);
 		}
 
 		public static void WriteVector2Int(BinaryWriter writer, ref Vector2Int v)

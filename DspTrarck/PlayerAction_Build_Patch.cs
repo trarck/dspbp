@@ -20,7 +20,20 @@ namespace DspTrarck
 					__instance.buildPreviews.Clear();
 				}
 
-				TrarckPlugin.Instance.factoryBP.UpdateBuildPosition(__instance.groundSnappedPos);
+				if (VFInput._rotate.onDown)
+				{
+					__instance.yaw += 90f;
+					__instance.yaw = Mathf.Repeat(__instance.yaw, 360f);
+					__instance.yaw = Mathf.Round(__instance.yaw / 90f) * 90f;
+				}
+				if (VFInput._counterRotate.onDown)
+				{
+					__instance.yaw -= 90f;
+					__instance.yaw = Mathf.Repeat(__instance.yaw, 360f);
+					__instance.yaw = Mathf.Round(__instance.yaw / 90f) * 90f;
+				}
+
+				TrarckPlugin.Instance.factoryBP.UpdateBuildPosition(__instance.groundSnappedPos,__instance.yaw);
 				foreach (var buildPreview in TrarckPlugin.Instance.factoryBP.buildPreviews)
 				{
 					__instance.AddBuildPreview(buildPreview);

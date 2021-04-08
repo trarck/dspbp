@@ -104,7 +104,7 @@ namespace DspTrarck
 		public Quaternion rot;
 
 		//x:longitude index,y:latitude index
-		public Vector2Int gcsCellIndex;
+		public Vector2 grid;
 		//离地面的距离
 		public float offsetGround;
 
@@ -120,7 +120,7 @@ namespace DspTrarck
 		public Vector3 pos2;
 		public Quaternion rot2;
 
-		public Vector2Int gcsCellIndex2;
+		public Vector2 grid2;
 		//离地面的距离2
 		public float offsetGround2;
 

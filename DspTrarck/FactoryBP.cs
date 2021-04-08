@@ -312,13 +312,13 @@ namespace DspTrarck
 			return true;
 		}
 
-		public void UpdateBuildPosition(Vector3 pos)
+		public void UpdateBuildPosition(Vector3 pos, float yaw=0)
 		{
 			m_BuildPos = pos;
-			UpdateBuildPreviewsPosition(pos);
+			UpdateBuildPreviewsPosition(pos, yaw);
 		}
 
-		public void UpdateBuildPreviewsPosition(Vector3 pos)
+		public void UpdateBuildPreviewsPosition(Vector3 pos, float yaw)
 		{
 			//更新build preview的坐标。
 			if (m_BuildPreviews != null && m_BuildPreviews.Count > 0)
@@ -326,52 +326,82 @@ namespace DspTrarck
 
 				Vector3 gcs = m_PlanetCoordinate.LocalToGcs(pos);
 
-				Vector2Int buildCell = Vector2Int.zero;
+				Vector2 buildGrid = Vector2.zero;
 				if (currentData.posType == BPData.PosType.Relative)
 				{
-					buildCell = m_PlanetCoordinate.GcsToCell(gcs);
+					buildGrid = m_PlanetCoordinate.GcsToGrid(gcs);
 				}
 
 				for (int i = 0; i < m_BuildPreviews.Count; ++i)
 				{
 					BPEntityData entityData = m_CurrentEntities[i];
 					BuildPreview buildPreview = m_BuildPreviews[i];
-					SetBuildPreviewPosition(buildPreview, entityData, buildCell, gcs.x);
+					SetBuildPreviewPosition(buildPreview, entityData, buildGrid, gcs.x, yaw);
 					buildPreview.condition = EBuildCondition.Ok;
 				}
 			}
 		}
-		
+
 		/// <summary>
 		/// 更新buildPreview的位置
 		/// </summary>
 		/// <param name="buildPreview"></param>
 		/// <param name="bpEntity"></param>
-		/// <param name="cellOffset"></param>
-		public void SetBuildPreviewPosition(BuildPreview buildPreview, BPEntityData bpEntity, Vector2Int buildCell,float longitude)
+		/// <param name="buildGrid"></param>
+		/// <param name="longitude"></param>
+		/// <param name="yaw"></param>
+		public void SetBuildPreviewPosition(BuildPreview buildPreview, BPEntityData bpEntity, Vector2 buildGrid,float longitude, float yaw=0)
 		{
-			Vector2Int entityCell = m_PlanetCoordinate.GcsOffset(buildCell, longitude, bpEntity.gcsCellIndex);
-			Vector3 posNormal = m_PlanetCoordinate.CellToNormal(entityCell);
+			Vector2 gridOffset = GetGridOffset(bpEntity.grid, yaw);
+			Vector2 entityGrid = m_PlanetCoordinate.GscApplyGridOffset(buildGrid, longitude, gridOffset);
+			Vector3 posNormal = m_PlanetCoordinate.GridToNormal(entityGrid);
 			buildPreview.lpos = m_PlanetCoordinate.NormalToGround(posNormal) + posNormal * bpEntity.offsetGround;
 
 			//rotation
-			Quaternion rot = Maths.SphericalRotation(buildPreview.lpos, 0);
+			Quaternion rot = Maths.SphericalRotation(buildPreview.lpos, yaw);
 			buildPreview.lrot = rot * bpEntity.rot;
 
-			YHDebug.LogFormat("SetBuildPreviewPosition:cell={0},offset={1},pos={2},proto={3},type={4},entityId={5}", bpEntity.gcsCellIndex , entityCell, buildPreview.lpos,bpEntity.protoId,bpEntity.type,bpEntity.entityId);
+			YHDebug.LogFormat("SetBuildPreviewPosition:grid={0},offset={1},pos={2},proto={3},type={4},entityId={5},ci={6},yaw={7}", 
+				bpEntity.grid , entityGrid, buildPreview.lpos,
+				bpEntity.protoId,bpEntity.type,bpEntity.entityId,
+				gridOffset,yaw
+				);
 
 			if (bpEntity.type == BPEntityType.Inserter)
 			{
-				entityCell = m_PlanetCoordinate.GcsOffset(buildCell, longitude, bpEntity.gcsCellIndex2);
-				posNormal = m_PlanetCoordinate.CellToNormal(entityCell);
+				gridOffset = GetGridOffset(bpEntity.grid2, yaw);
+				entityGrid = m_PlanetCoordinate.GscApplyGridOffset(buildGrid, longitude, gridOffset);
+				posNormal = m_PlanetCoordinate.GridToNormal(entityGrid);
 				buildPreview.lpos2 = m_PlanetCoordinate.NormalToGround(posNormal) + posNormal * bpEntity.offsetGround2;
 
 				//rotation
-				rot = Maths.SphericalRotation(buildPreview.lpos2, 0);
+				rot = Maths.SphericalRotation(buildPreview.lpos2, yaw);
 				buildPreview.lrot2 = rot * bpEntity.rot2;
 
-				YHDebug.LogFormat("SetBuildPreviewPosition2:cell={0},offset={1},pos={2},proto={3},type={4},entityId={5}", bpEntity.gcsCellIndex2, entityCell, buildPreview.lpos2, bpEntity.protoId, bpEntity.type, bpEntity.entityId);
+				YHDebug.LogFormat("SetBuildPreviewPosition2:grid={0},offset={1},pos={2},proto={3},type={4},entityId={5},ci={6},yaw={7}", 
+					bpEntity.grid2, entityGrid, buildPreview.lpos2, 
+					bpEntity.protoId, bpEntity.type, bpEntity.entityId			  ,
+					gridOffset,yaw
+					);
 			}
+		}
+
+		private Vector2 GetGridOffset(Vector2 gridOffset,float yaw)
+		{
+			int yawIndex = Mathf.RoundToInt(yaw / 90);
+			switch (yawIndex)
+			{
+				case 0:
+					return gridOffset;
+				case 1:
+					return new Vector2(-gridOffset.y, gridOffset.x);
+				case 2:
+					return new Vector2(-gridOffset.x, -gridOffset.y);
+				case 3:
+					return new Vector2(gridOffset.y, -gridOffset.x);
+			}
+
+			return gridOffset;
 		}
 		#endregion
 
@@ -411,21 +441,21 @@ namespace DspTrarck
 
 			SetEntityExtData(bpEntity, entity);
 
-			SetEntityGcsCell(bpEntity, entity);
+			SetEntityGcsGrid(bpEntity, entity);
 
 			return bpEntity;
 		}
 
-		public void SetEntityGcsCell(BPEntityData bpEntity, EntityData entity)
+		public void SetEntityGcsGrid(BPEntityData bpEntity, EntityData entity)
 		{
 			//直角坐标转换成格子坐标。保留原坐标，比对作用。
-			bpEntity.gcsCellIndex = m_PlanetCoordinate.LocalToCell(bpEntity.pos);
+			bpEntity.grid = m_PlanetCoordinate.LocalToGrid(bpEntity.pos);
 			//Debug.LogFormat("height:{0},{1},{2}", bpEntity.pos.magnitude, planetData.radius,bpEntity.pos.magnitude-planetData.radius);
 			bpEntity.offsetGround = Mathf.Max(0, bpEntity.pos.magnitude - planetData.radius-0.2f);
 
 			if (bpEntity.type == BPEntityType.Inserter)
 			{
-				bpEntity.gcsCellIndex2 = m_PlanetCoordinate.LocalToCell(bpEntity.pos2);
+				bpEntity.grid2 = m_PlanetCoordinate.LocalToGrid(bpEntity.pos2);
 				bpEntity.offsetGround2 = Mathf.Max(0, bpEntity.pos2.magnitude - planetData.radius - 0.2f);
 			}
 		}
@@ -771,7 +801,7 @@ namespace DspTrarck
 			float negativeLongMin = float.MaxValue, negativeLongMax = float.MinValue;
 			float positiveLongMin = float.MaxValue, positiveLongMax = float.MinValue;
 
-			int latCellMin = int.MaxValue, latCellMax = int.MinValue;
+			float latGridMin = float.MaxValue, latGridMax = float.MinValue;
 			//计算经纬度包围盒
 			for (int i = 0; i < data.entities.Count; ++i)
 			{
@@ -780,8 +810,8 @@ namespace DspTrarck
 				latMin = Math.Min(latMin, gcs.y);
 				latMax = Math.Max(latMax, gcs.y);
 
-				latCellMin = Math.Min(latCellMin, entityData.gcsCellIndex.y);
-				latCellMax = Math.Max(latCellMax, entityData.gcsCellIndex.y);
+				latGridMin = Math.Min(latGridMin, entityData.grid.y);
+				latGridMax = Math.Max(latGridMax, entityData.grid.y);
 
 				if (gcs.x < 0)
 				{
@@ -795,7 +825,7 @@ namespace DspTrarck
 				}
 			}
 
-			YHDebug.LogFormat("lat:{0},{1}", latCellMin, latCellMax);
+			YHDebug.LogFormat("lat:{0},{1}", latGridMin, latGridMax);
 
 			float longMin = 0, longMax = 0;
 			float negativeAdd = 0;
@@ -842,39 +872,7 @@ namespace DspTrarck
 			YHDebug.LogFormat("rect:{0},{1},{2},{3}", positiveLongMin, positiveLongMax, negativeLongMin, negativeLongMax);
 			YHDebug.LogFormat("long:{0},{1}", longMin, longMax);
 
-			NormalizeEntities(data, new Vector3(longMin, latMin), latCellMin);
-			//fix cell index
-			//for (int i = 0; i < data.entities.Count; ++i)
-			//{
-			//	BPEntityData entityData = data.entities[i];
-			//	gcs = m_PlanetCoordinate.LocalToGcs(entityData.pos);
-			//	if (needFixNegativeLong && gcs.x < 0)
-			//	{
-			//		gcs.x += negativeAdd;
-			//	}
-			//	gcs.x -= longMin;
-			//	//这里要保证维度是原来的维度。这里的经度已经是偏移的。转换成cell后，就是偏移的cell。
-			//	Vector2Int cellOffset = m_PlanetCoordinate.GcsToCell(gcs);
-			//	//Debug.LogFormat("e:{0},{1},{2}", gcs, cellOffset, latCellMin);
-			//	//偏移维度
-			//	cellOffset.y -= latCellMin;
-			//	entityData.gcsCellIndex = cellOffset;
-
-			//	//只有爪子有第二个位置
-			//	if (entityData.type == BPEntityType.Inserter)
-			//	{
-			//		gcs = m_PlanetCoordinate.LocalToGcs(entityData.pos2);
-			//		if (needFixNegativeLong && gcs.x < 0)
-			//		{
-			//			gcs.x += negativeAdd;
-			//		}
-			//		gcs.x -= longMin;
-			//		cellOffset = m_PlanetCoordinate.GcsToCell(gcs);
-			//		cellOffset.y -= latCellMin;
-			//		entityData.gcsCellIndex2 = cellOffset;
-			//	}
-			//}
-
+			NormalizeEntities(data, new Vector3(longMin, latMin), latGridMin);
 			//Debug.LogFormat("Bounds:{0}", data.gridBounds);
 			//记录经维度
 			data.longitude = longMin;
@@ -893,12 +891,12 @@ namespace DspTrarck
 			data.longitude = originalGcs.x;
 			data.latitude = originalGcs.y;
 
-			Vector2Int originalCell = m_PlanetCoordinate.GcsToCell(originalGcs);
+			Vector2 originalGrid = m_PlanetCoordinate.GcsToGrid(originalGcs);
 
-			NormalizeEntities(data, originalGcs, originalCell.y);
+			NormalizeEntities(data, originalGcs, originalGrid.y);
 		}
 
-		private void NormalizeEntities(BPData data,Vector3 originalGcs,int originalLatCell)
+		private void NormalizeEntities(BPData data,Vector3 originalGcs,float originalLatGrid)
 		{
 			Vector3 gcs;
 
@@ -909,12 +907,12 @@ namespace DspTrarck
 				//偏移经度
 				gcs.x = YH.YHMath.DeltaRadian(originalGcs.x, gcs.x);
 				//这里要保证维度是原来的维度。
-				//这里的经度已经是偏移的。转换成cell后，就是偏移的cell。
-				Vector2Int cellOffset = m_PlanetCoordinate.GcsToCell(gcs);
-				YHDebug.LogFormat("e:{0},{1},{2}", gcs.x,gcs.y, cellOffset);
+				//这里的经度已经是偏移的。转换成grid后，就是偏移的grid。
+				Vector2 gridOffset = m_PlanetCoordinate.GcsToGrid(gcs);
+				YHDebug.LogFormat("e:{0},{1},{2}", gcs.x,gcs.y, gridOffset);
 				//偏移维度
-				cellOffset.y -= originalLatCell;
-				entityData.gcsCellIndex = cellOffset;
+				gridOffset.y -= originalLatGrid;
+				entityData.grid = gridOffset;
 
 				//rotation
 				Quaternion rot = Maths.SphericalRotation(entityData.pos, 0);
@@ -931,12 +929,12 @@ namespace DspTrarck
 					//偏移经度
 					gcs.x = YH.YHMath.DeltaRadian(originalGcs.x, gcs.x);
 					//这里要保证维度是原来的维度。
-					//这里的经度已经是偏移的。转换成cell后，就是偏移的cell。
-					cellOffset = m_PlanetCoordinate.GcsToCell(gcs);
-					YHDebug.LogFormat("e2:{0},{1},{2}", gcs.x, gcs.y, cellOffset);
+					//这里的经度已经是偏移的。转换成grid后，就是偏移的grid。
+					gridOffset = m_PlanetCoordinate.GcsToGrid(gcs);
+					YHDebug.LogFormat("e2:{0},{1},{2}", gcs.x, gcs.y, gridOffset);
 					//偏移维度
-					cellOffset.y -= originalLatCell;
-					entityData.gcsCellIndex2 = cellOffset;
+					gridOffset.y -= originalLatGrid;
+					entityData.grid2 = gridOffset;
 
 					//rotation
 					rot = Maths.SphericalRotation(entityData.pos2, 0);
