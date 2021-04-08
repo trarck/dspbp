@@ -183,14 +183,92 @@ namespace DspTrarck
 		[HarmonyPrefix, HarmonyPriority(Priority.Last), HarmonyPatch(typeof(PlayerAction_Build), "CreatePrebuilds")]
 		public static bool PlayerAction_Build_CreatePrebuilds_Prefix(ref PlayerAction_Build __instance)
 		{
-			//if (TrarckPlugin.Instance.BPBuild)
-			//	Debug.LogFormat("CreatePrebuilds:waitConfirm={0},build down={1},previes={2}", __instance.waitConfirm, VFInput._buildConfirm.onDown, __instance.buildPreviews.Count);
+			if (__instance.waitConfirm && VFInput._buildConfirm.onDown && __instance.buildPreviews.Count > 0)
+			{
+				foreach (BuildPreview buildPreview in __instance.buildPreviews)
+				{
+					if (buildPreview.desc.isInserter)
+					{
+						//parse cover
+						if (buildPreview.input == null)
+						{
+							int overlappedCount = GetOverlappedObjectsNonAlloc(__instance,buildPreview.lpos, 0.3f, 3f);
+							if(overlappedCount>0)
+							{
+								buildPreview.inputObjId = _overlappedIds[0];
+							}
+						}
+					}
+					else if (buildPreview.desc.isBelt)
+					{
+						  //parse cover
+					}
+				}
+			}
+
 			return true;
 		}
 
 		private static Pose GetBuildPreviewPose(BuildPreview buildPreview)
 		{
 			return new Pose(buildPreview.lpos, buildPreview.lrot);
+		}
+
+		public static int[] _nearObjectIds = new int[4096];
+		private static int[] _overlappedIds = new int[4096];
+
+		public static int GetOverlappedObjectsNonAlloc(PlayerAction_Build __instance,Vector3 pos, float objSize = 0f, float areaSize = 10f)
+		{
+			int overlappedCount = 0;
+			int nearObjectCount = __instance.player.planetData.physics.nearColliderLogic.GetBuildingsInAreaNonAlloc(pos, areaSize, _nearObjectIds);
+			for (int i = 0; i < nearObjectCount; i++)
+			{
+				int entityId = _nearObjectIds[i];
+				int colliderId = 0;
+				ColliderData colliderData = default(ColliderData);
+				if (entityId > 0)
+				{
+					EntityData entityData = __instance.player.factory.entityPool[entityId];
+					if (entityData.id != entityId)
+					{
+						continue;
+					}
+					colliderId = entityData.colliderId;
+				}
+				else	if(entityId<0)
+				{
+					PrebuildData prebuildData = __instance.player.factory.prebuildPool[-entityId];
+					if (prebuildData.id != -entityId)
+					{
+						continue;
+					}
+					colliderId = prebuildData.colliderId;
+				}
+				else
+				{
+					continue;
+				}
+
+				int num3 = 0;
+				while (colliderId != 0)
+				{
+					colliderData =__instance.player.planetData.physics.GetColliderData(colliderId);
+					colliderData.ext += new Vector3(objSize, objSize, objSize);
+					if (colliderData.ContainsInBox(pos))
+					{
+						_overlappedIds[overlappedCount++] = entityId;
+						break;
+					}
+					colliderId = colliderData.link;
+					if (++num3 > 32)
+					{
+						Assert.CannotBeReached();
+						break;
+					}
+				}
+			}
+
+			return overlappedCount;
 		}
 	}
 }
