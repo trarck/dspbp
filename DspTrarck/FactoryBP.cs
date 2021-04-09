@@ -25,6 +25,8 @@ namespace DspTrarck
 		private List<BuildPreview> m_BuildPreviews;
 		//当前使用的Entity。和buildpreview一一对应。
 		private List<BPEntityData> m_CurrentEntities;
+		//原entity id到新建立的BuildPreview的映射。
+		private Dictionary<int, BuildPreview> m_EntitiesIdToBuildPreviewMap;
 
 		private List<PrebuildData> m_PrebuildDatas;
 
@@ -116,6 +118,7 @@ namespace DspTrarck
 			m_PlanetCoordinate = null;
 			m_BuildPreviews = null;
 			m_CurrentEntities = null;
+			m_EntitiesIdToBuildPreviewMap = null;
 			m_PrebuildDatas = null;
 		}
 
@@ -135,6 +138,11 @@ namespace DspTrarck
 			if (m_CurrentEntities != null)
 			{
 				m_CurrentEntities.Clear();
+			}
+
+			if (m_EntitiesIdToBuildPreviewMap != null)
+			{
+				m_EntitiesIdToBuildPreviewMap.Clear();
 			}
 
 			if (m_PrebuildDatas != null)
@@ -193,16 +201,22 @@ namespace DspTrarck
 				m_CurrentEntities.Clear();
 			}
 
-			TryCreateBuildPrevies(currentData, ref m_BuildPreviews, ref m_CurrentEntities);
+			if (m_EntitiesIdToBuildPreviewMap == null)
+			{
+				m_EntitiesIdToBuildPreviewMap = new Dictionary<int, BuildPreview>();
+			}
+			else
+			{
+				m_EntitiesIdToBuildPreviewMap.Clear();
+			}
+
+			TryCreateBuildPrevies(currentData, ref m_BuildPreviews, ref m_CurrentEntities,ref m_EntitiesIdToBuildPreviewMap);
 		}
 
-		public bool TryCreateBuildPrevies(BPData data, ref List<BuildPreview> buildPreviews, ref List<BPEntityData> entities)
+		public bool TryCreateBuildPrevies(BPData data, ref List<BuildPreview> buildPreviews, ref List<BPEntityData> entities, ref Dictionary<int,BuildPreview> entitiesIdToBuildPreviewMap)
 		{
 			if (data != null && data.entities.Count > 0)
 			{
-				//复制的时候entity id到新建立的BuildPreview的映射。
-				Dictionary<int, BuildPreview> entitiesIdToBuildPreviewMap = new Dictionary<int, BuildPreview>();
-
 				BuildPreview buildPreview = null;
 				//创建build previews
 				for (int i = 0; i < data.entities.Count; ++i)
@@ -218,63 +232,138 @@ namespace DspTrarck
 				//Debug.LogFormat("map count:{0}", entitiesIdToBuildPreviewMap.Count);
 
 				//处理连接。连接保存的是entity id之间的联系
-				if (data.connects != null && data.connects.Count > 0)
-				{
-					BuildPreview other = null;
-					foreach (var connect in data.connects)
-					{
-						//Debug.LogFormat("[{0}]connect:{1},{2},{3},{4},{5}", connect.isOutput ? "output" : "input", connect.fromObjId, connect.fromSlot, connect.toObjId, connect.toSlot, connect.offset);
-						if (connect.isOutput)
-						{
-							if (entitiesIdToBuildPreviewMap.TryGetValue(connect.fromObjId, out buildPreview))
-							{
-								if (entitiesIdToBuildPreviewMap.TryGetValue(connect.toObjId, out other))
-								{
-									buildPreview.output = other;
-									buildPreview.outputObjId = 0;
-									buildPreview.outputFromSlot = connect.fromSlot;
-									buildPreview.outputToSlot = connect.toSlot;
-									buildPreview.outputOffset = connect.offset;
-								}
-								else
-								{
-									Debug.LogFormat("Can't find to entity {0}", connect.toObjId);
-								}
-							}
-							else
-							{
-								Debug.LogFormat("Can't find from entity {0}", connect.fromObjId);
-							}
-						}
-						else
-						{
-							//抓子会同时有input和output。
-							if (entitiesIdToBuildPreviewMap.TryGetValue(connect.fromObjId, out buildPreview))
-							{
-								if (entitiesIdToBuildPreviewMap.TryGetValue(connect.toObjId, out other))
-								{
-									buildPreview.input = other;
-									buildPreview.inputObjId = 0;
-									buildPreview.inputFromSlot = connect.toSlot;
-									buildPreview.inputToSlot = connect.fromSlot;
-									buildPreview.inputOffset = connect.offset;
-								}
-								else
-								{
-									Debug.LogFormat("Can't find to entity {0}", connect.toObjId);
-								}
-							}
-							else
-							{
-								Debug.LogFormat("Can't find from entity {0}", connect.fromObjId);
-							}
-						}
-					}
-				}
+				ConnectBuildPreviews(data.connects, entitiesIdToBuildPreviewMap);
+
+				//带子首尾设置忽略碰撞
+				ParseBeltsCollider(buildPreviews);
 
 				return true;
 			}
 			return false;	
+		}
+
+		private void ConnectBuildPreviews(List<ConnectData> connects, Dictionary<int, BuildPreview> entitiesIdToBuildPreviewMap)
+		{
+			if (connects != null && connects.Count > 0)
+			{
+				BuildPreview buildPreview = null;
+				BuildPreview other = null;
+				
+				foreach (var connect in connects)
+				{
+					//Debug.LogFormat("[{0}]connect:{1},{2},{3},{4},{5}", connect.isOutput ? "output" : "input", connect.fromObjId, connect.fromSlot, connect.toObjId, connect.toSlot, connect.offset);
+					if (connect.isOutput)
+					{
+						if (entitiesIdToBuildPreviewMap.TryGetValue(connect.fromObjId, out buildPreview))
+						{
+							if (entitiesIdToBuildPreviewMap.TryGetValue(connect.toObjId, out other))
+							{
+								buildPreview.output = other;
+								buildPreview.outputObjId = 0;
+								buildPreview.outputFromSlot = connect.fromSlot;
+								buildPreview.outputToSlot = connect.toSlot;
+								//buildPreview.outputOffset = connect.offset;
+							}
+							else
+							{
+								Debug.LogFormat("Can't find to entity {0}", connect.toObjId);
+							}
+						}
+						else
+						{
+							Debug.LogFormat("Can't find from entity {0}", connect.fromObjId);
+						}
+					}
+					else
+					{
+						//抓子会同时有input和output。
+						if (entitiesIdToBuildPreviewMap.TryGetValue(connect.fromObjId, out buildPreview))
+						{
+							if (entitiesIdToBuildPreviewMap.TryGetValue(connect.toObjId, out other))
+							{
+								buildPreview.input = other;
+								buildPreview.inputObjId = 0;
+								buildPreview.inputFromSlot = connect.toSlot;
+								buildPreview.inputToSlot = connect.fromSlot;
+								//buildPreview.inputOffset = connect.offset;
+							}
+							else
+							{
+								Debug.LogFormat("Can't find to entity {0}", connect.toObjId);
+							}
+						}
+						else
+						{
+							Debug.LogFormat("Can't find from entity {0}", connect.fromObjId);
+						}
+					}
+				}
+			}
+		}
+
+		private void ParseBeltsCollider(List<BuildPreview> buildPreviews)
+		{
+			HashSet<BuildPreview> inputBelts = new HashSet<BuildPreview>();
+			HashSet<BuildPreview> outputBelts = new HashSet<BuildPreview>();
+
+			for (int i = 0; i < buildPreviews.Count; ++i)
+			{
+				BuildPreview buildPreview = buildPreviews[i];
+				if (buildPreview.desc.isBelt)
+				{
+					if (buildPreview.output != null)
+					{
+						if (buildPreview.output.desc.isBelt)
+						{
+							//检查输出是不是作为输入存在过
+							if (inputBelts.Contains(buildPreview.output))
+							{
+								//作为输入存在过，则从输入中移除
+								inputBelts.Remove(buildPreview.output);
+							}
+							else
+							{
+								//没有，则加入输出。
+								outputBelts.Add(buildPreview.output);
+							}
+						}
+
+						//是否是别的输出。
+						if (outputBelts.Contains(buildPreview))
+						{
+							//已经是别的输出，则从输出中移除
+							outputBelts.Remove(buildPreview);
+						}
+						else
+						{
+							//不是，则加入输入
+							inputBelts.Add(buildPreview);
+						}
+					}
+					else
+					{
+						//on connect or no connect
+						buildPreview.ignoreCollider = true;
+					}
+				}
+			}
+
+			Debug.LogFormat("inputs Count:{0},outs Count:{1}", inputBelts.Count, outputBelts.Count);
+			foreach (var bp in inputBelts)
+			{
+				if (bp.desc.isBelt)
+				{
+					bp.ignoreCollider = true;
+				}
+			}
+
+			foreach (var bp in outputBelts)
+			{
+				if (bp.desc.isBelt)
+				{
+					bp.ignoreCollider = true;
+				}
+			}
 		}
 
 		public void CreateCurrentPrebuildDatas()
@@ -383,6 +472,64 @@ namespace DspTrarck
 					bpEntity.protoId, bpEntity.type, bpEntity.entityId			  ,
 					gridOffset,yaw
 					);
+			}
+		}
+
+		public void ResetBuildPreviewsRealChanges()
+		{
+			foreach (var buildPreview in m_BuildPreviews)
+			{
+				if (buildPreview.desc.isInserter)
+				{
+					ResetBuildPreviewRealConnect(buildPreview);
+				}
+				else if (buildPreview.desc.isBelt && buildPreview.ignoreCollider)
+				{
+					ResetBuildPreviewCover(buildPreview);
+				}
+			}			
+		}
+
+		public static void ResetBuildPreviewRealConnect(BuildPreview buildPreview)
+		{
+			if (buildPreview.inputObjId !=0)
+			{
+				if (buildPreview.input != null)
+				{
+					buildPreview.inputObjId = 0;
+					YHDebug.LogError("ResetBuildPreviewRealConnect input not null");
+				}
+				else
+				{
+					buildPreview.inputObjId = 0;
+					buildPreview.inputToSlot = 0;
+					buildPreview.inputFromSlot = 0;
+					buildPreview.inputOffset = 0;
+				}
+			}
+
+			if (buildPreview.outputObjId != 0)
+			{
+				if (buildPreview.output != null)
+				{
+					buildPreview.outputObjId = 0;
+					YHDebug.LogError("ResetBuildPreviewRealConnect output not null");
+				}
+				else
+				{
+					buildPreview.outputObjId = 0;
+					buildPreview.outputFromSlot = 0;
+					buildPreview.outputToSlot = 0;
+					buildPreview.outputOffset = 0;
+				}
+			}
+		}
+
+		public static void ResetBuildPreviewCover(BuildPreview buildPreview)
+		{
+			if (buildPreview.coverObjId != 0)
+			{
+				buildPreview.coverObjId = 0;
 			}
 		}
 
@@ -730,7 +877,7 @@ namespace DspTrarck
 			for (int i = 0; i < 16; ++i)
 			{
 				m_PlanetFactory.ReadObjectConn(bpEntity.entityId, i, out isOutput, out otherObjId, out otherSlot);
-				//Debug.LogFormat("both connect:{0},{1},{2},{3},{4}",bpEntity.entityId,i, isOutput, otherObjId, otherSlot);
+				YHDebug.LogFormat("both connect:{0},{1},{2},{3},{4},{5},{6}",bpEntity.entityId,i, isOutput, otherObjId, otherSlot, bpEntity.pickOffset,bpEntity.insertOffset);
 
 				if (otherObjId != 0)
 				{
@@ -740,7 +887,8 @@ namespace DspTrarck
 					connect.fromSlot = i;
 					connect.toSlot = otherSlot;
 					connect.isOutput = isOutput;
-					connect.offset = 0;
+
+					connect.offset = isOutput ? bpEntity.insertOffset : bpEntity.pickOffset;
 
 					connects.Add(connect);
 				}
@@ -756,7 +904,7 @@ namespace DspTrarck
 			for (int i = 0; i < 16; ++i)
 			{
 				m_PlanetFactory.ReadObjectConn(bpEntity.entityId, i, out isOutput, out otherObjId, out otherSlot);
-				//Debug.LogFormat("output connect:{0},{1},{2},{3},{4}",bpEntity.entityId, i, isOutput, otherObjId, otherSlot);
+				YHDebug.LogFormat("output connect:{0},{1},{2},{3},{4},{5},{6}",bpEntity.entityId, i, isOutput, otherObjId, otherSlot, bpEntity.pickOffset, bpEntity.insertOffset);
 
 				//连接是相互的,只记录一种连接。
 				//如果有截断，则忽略连接。复制的时候没办法补齐另一方。
@@ -769,7 +917,8 @@ namespace DspTrarck
 					connect.fromSlot = i;
 					connect.toSlot = otherSlot;
 					connect.isOutput = isOutput;
-					connect.offset = 0;
+
+					connect.offset = bpEntity.insertOffset;
 
 					if (!BPData.IsConnectExists(connect, connects))
 					{
@@ -1055,6 +1204,61 @@ namespace DspTrarck
 		{
 			Vector3 localNormal = m_PlanetCoordinate.CellToNormal(cellIndex);
 			return m_PlanetCoordinate.NormalToGround(localNormal);
+		}
+
+		public static int[] _nearObjectIds = new int[4096];
+		public int GetOverlappedObjectsNonAlloc(Vector3 pos, float objSize, float areaSize, bool ignoreAltitude , int[] overlappedIds)
+		{
+			int overlappedCount = 0;
+			int nearObjectCount = player.planetData.physics.nearColliderLogic.GetBuildingsInAreaNonAlloc(pos, areaSize, _nearObjectIds, ignoreAltitude);
+			for (int i = 0; i < nearObjectCount; i++)
+			{
+				int entityId = _nearObjectIds[i];
+				int colliderId = 0;
+				ColliderData colliderData = default(ColliderData);
+				if (entityId > 0)
+				{
+					EntityData entityData = player.factory.entityPool[entityId];
+					if (entityData.id != entityId)
+					{
+						continue;
+					}
+					colliderId = entityData.colliderId;
+				}
+				else if (entityId < 0)
+				{
+					PrebuildData prebuildData = player.factory.prebuildPool[-entityId];
+					if (prebuildData.id != -entityId)
+					{
+						continue;
+					}
+					colliderId = prebuildData.colliderId;
+				}
+				else
+				{
+					continue;
+				}
+
+				int num3 = 0;
+				while (colliderId != 0)
+				{
+					colliderData = player.planetData.physics.GetColliderData(colliderId);
+					colliderData.ext += new Vector3(objSize, objSize, objSize);
+					if (colliderData.ContainsInBox(pos))
+					{
+						overlappedIds[overlappedCount++] = entityId;
+						break;
+					}
+					colliderId = colliderData.link;
+					if (++num3 > 32)
+					{
+						Assert.CannotBeReached();
+						break;
+					}
+				}
+			}
+
+			return overlappedCount;
 		}
 	}
 }

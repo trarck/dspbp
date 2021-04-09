@@ -1,10 +1,13 @@
 ﻿using HarmonyLib;
 using UnityEngine;
+using YH.Log;
 
 namespace DspTrarck
 {
 	public class PlayerAction_Build_Patch
 	{
+		private static int[] _overlappedIds = new int[4096];
+
 		[HarmonyPrefix, HarmonyPriority(Priority.Last), HarmonyPatch(typeof(PlayerAction_Build), "DetermineBuildPreviews")]
 		public static bool PlayerAction_Build_DetermineBuildPreviews_Prefix(ref PlayerAction_Build __instance)
 		{
@@ -15,7 +18,7 @@ namespace DspTrarck
 				runOriginal = false;
 				__instance.waitConfirm = __instance.cursorValid;
 
-				if (__instance.buildPreviews!=null && __instance.buildPreviews.Count > 0)
+				if (__instance.buildPreviews != null && __instance.buildPreviews.Count > 0)
 				{
 					__instance.buildPreviews.Clear();
 				}
@@ -33,7 +36,7 @@ namespace DspTrarck
 					__instance.yaw = Mathf.Round(__instance.yaw / 90f) * 90f;
 				}
 
-				TrarckPlugin.Instance.factoryBP.UpdateBuildPosition(__instance.groundSnappedPos,__instance.yaw);
+				TrarckPlugin.Instance.factoryBP.UpdateBuildPosition(__instance.groundSnappedPos, __instance.yaw);
 				foreach (var buildPreview in TrarckPlugin.Instance.factoryBP.buildPreviews)
 				{
 					__instance.AddBuildPreview(buildPreview);
@@ -47,7 +50,7 @@ namespace DspTrarck
 		}
 
 		[HarmonyPostfix, HarmonyPriority(Priority.Last), HarmonyPatch(typeof(PlayerAction_Build), "CheckBuildConditions")]
-		public static void PlayerAction_Build_CheckBuildConditions_Postfix(ref PlayerAction_Build __instance,ref bool __result)
+		public static void PlayerAction_Build_CheckBuildConditions_Postfix(ref PlayerAction_Build __instance, ref bool __result)
 		{
 			if (TrarckPlugin.Instance.BPBuild && !__result)
 			{
@@ -72,9 +75,9 @@ namespace DspTrarck
 						{
 							forward = Maths.SphericalRotation(buildPreview.lpos, 0f).Forward();
 						}
-					
+
 						pose.rotation = Quaternion.LookRotation(forward, buildPreview.lpos.normalized);
-						
+
 						bool inputIsBelt = buildPreview.input != null ? buildPreview.input.desc.isBelt : false;
 						bool outputIsBelt = buildPreview.output != null ? buildPreview.output.desc.isBelt : false;
 
@@ -84,7 +87,7 @@ namespace DspTrarck
 							zero = (inputIsBelt && !outputIsBelt) ? buildPreview.output.lpos :
 								((inputIsBelt || !outputIsBelt) ? ((buildPreview.input.lpos + buildPreview.output.lpos) * 0.5f) : buildPreview.input.lpos);
 						}
-						else if (buildPreview.input == null & buildPreview.output==null)
+						else if (buildPreview.input == null & buildPreview.output == null)
 						{
 							zero = (buildPreview.lpos + buildPreview.lpos2) * 0.5f;
 						}
@@ -183,25 +186,75 @@ namespace DspTrarck
 		[HarmonyPrefix, HarmonyPriority(Priority.Last), HarmonyPatch(typeof(PlayerAction_Build), "CreatePrebuilds")]
 		public static bool PlayerAction_Build_CreatePrebuilds_Prefix(ref PlayerAction_Build __instance)
 		{
+			TrarckPlugin.Instance.NeedResetBuildPreview = false;
+
 			if (__instance.waitConfirm && VFInput._buildConfirm.onDown && __instance.buildPreviews.Count > 0)
 			{
-				foreach (BuildPreview buildPreview in __instance.buildPreviews)
+				if (TrarckPlugin.Instance.BPBuild)
 				{
-					if (buildPreview.desc.isInserter)
+					FactoryBP factoryBP = TrarckPlugin.Instance.factoryBP;
+					foreach (BuildPreview buildPreview in __instance.buildPreviews)
 					{
-						//parse cover
-						if (buildPreview.input == null)
+						if (buildPreview.desc.isInserter)
 						{
-							int overlappedCount = GetOverlappedObjectsNonAlloc(__instance,buildPreview.lpos, 0.3f, 3f);
-							if(overlappedCount>0)
+							//parse cover
+							if (buildPreview.input == null)
 							{
-								buildPreview.inputObjId = _overlappedIds[0];
+								int overlappedCount = factoryBP.GetOverlappedObjectsNonAlloc(buildPreview.lpos, 0.3f, 3f,false, _overlappedIds);
+								Debug.LogFormat("CreatePrebuilds_Prefix:insert input over {0}", overlappedCount);
+								if (overlappedCount > 0)
+								{
+									int objId = _overlappedIds[0];
+									bool isBelt = FactoryHelper.ObjectIsBelt(__instance.player.factory, objId);
+									if (isBelt)
+									{
+										buildPreview.inputObjId = objId;
+										buildPreview.inputToSlot = 1;
+										buildPreview.inputFromSlot = -1;
+										buildPreview.inputOffset = 0;
+
+										TrarckPlugin.Instance.NeedResetBuildPreview = true;
+									}
+								}
+							}
+
+							if (buildPreview.output == null)
+							{
+								int overlappedCount = factoryBP.GetOverlappedObjectsNonAlloc(buildPreview.lpos2, 0.3f, 3f, false, _overlappedIds);
+								Debug.LogFormat("CreatePrebuilds_Prefix:insert output over {0}", overlappedCount);
+								if (overlappedCount > 0)
+								{
+									int objId = _overlappedIds[0];
+									bool isBelt = FactoryHelper.ObjectIsBelt(__instance.player.factory, objId);
+									if (isBelt)
+									{
+										buildPreview.outputObjId = objId;
+										buildPreview.outputFromSlot = 0;
+										buildPreview.outputToSlot = -1;
+										buildPreview.outputOffset = 0;
+										TrarckPlugin.Instance.NeedResetBuildPreview = true;
+									}
+								}
 							}
 						}
-					}
-					else if (buildPreview.desc.isBelt)
-					{
-						  //parse cover
+						else if (buildPreview.desc.isBelt && buildPreview.ignoreCollider)
+						{
+							//parse cover
+							int overlappedCount = factoryBP.GetOverlappedObjectsNonAlloc(buildPreview.lpos, 0.3f, 3f, false, _overlappedIds);
+							YHDebug.LogFormat("CreatePrebuilds_Prefix:belt over {0}", overlappedCount);
+							if (overlappedCount > 0)
+							{
+								int objId = _overlappedIds[0];
+								bool isBelt = FactoryHelper.ObjectIsBelt(__instance.player.factory, objId);
+								if (isBelt)
+								{
+									buildPreview.coverObjId = objId;
+									buildPreview.willCover = false;
+
+									TrarckPlugin.Instance.NeedResetBuildPreview = true;
+								}
+							}
+						}
 					}
 				}
 			}
@@ -209,66 +262,13 @@ namespace DspTrarck
 			return true;
 		}
 
-		private static Pose GetBuildPreviewPose(BuildPreview buildPreview)
+		[HarmonyPostfix, HarmonyPriority(Priority.Last), HarmonyPatch(typeof(PlayerAction_Build), "CreatePrebuilds")]
+		public static void PlayerAction_Build_CreatePrebuilds_Postfix(ref PlayerAction_Build __instance)
 		{
-			return new Pose(buildPreview.lpos, buildPreview.lrot);
-		}
-
-		public static int[] _nearObjectIds = new int[4096];
-		private static int[] _overlappedIds = new int[4096];
-
-		public static int GetOverlappedObjectsNonAlloc(PlayerAction_Build __instance,Vector3 pos, float objSize = 0f, float areaSize = 10f)
-		{
-			int overlappedCount = 0;
-			int nearObjectCount = __instance.player.planetData.physics.nearColliderLogic.GetBuildingsInAreaNonAlloc(pos, areaSize, _nearObjectIds);
-			for (int i = 0; i < nearObjectCount; i++)
+			if (TrarckPlugin.Instance.NeedResetBuildPreview)
 			{
-				int entityId = _nearObjectIds[i];
-				int colliderId = 0;
-				ColliderData colliderData = default(ColliderData);
-				if (entityId > 0)
-				{
-					EntityData entityData = __instance.player.factory.entityPool[entityId];
-					if (entityData.id != entityId)
-					{
-						continue;
-					}
-					colliderId = entityData.colliderId;
-				}
-				else	if(entityId<0)
-				{
-					PrebuildData prebuildData = __instance.player.factory.prebuildPool[-entityId];
-					if (prebuildData.id != -entityId)
-					{
-						continue;
-					}
-					colliderId = prebuildData.colliderId;
-				}
-				else
-				{
-					continue;
-				}
-
-				int num3 = 0;
-				while (colliderId != 0)
-				{
-					colliderData =__instance.player.planetData.physics.GetColliderData(colliderId);
-					colliderData.ext += new Vector3(objSize, objSize, objSize);
-					if (colliderData.ContainsInBox(pos))
-					{
-						_overlappedIds[overlappedCount++] = entityId;
-						break;
-					}
-					colliderId = colliderData.link;
-					if (++num3 > 32)
-					{
-						Assert.CannotBeReached();
-						break;
-					}
-				}
+				TrarckPlugin.Instance.factoryBP.ResetBuildPreviewsRealChanges();
 			}
-
-			return overlappedCount;
 		}
 	}
 }

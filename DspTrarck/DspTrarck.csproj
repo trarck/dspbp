@@ -246,6 +246,7 @@
     <Compile Include="BPDataReader.cs" />
     <Compile Include="FactoryBP.cs" />
     <Compile Include="FactoryBPUI.cs" />
+    <Compile Include="FactoryHelper.cs" />
     <Compile Include="MultiSelector.cs" />
     <Compile Include="PlanetCoordinate.cs" />
     <Compile Include="PlayerAction_Build_Patch.cs" />

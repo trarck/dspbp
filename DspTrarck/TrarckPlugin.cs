@@ -30,6 +30,8 @@ namespace DspTrarck
 		private static TrarckPlugin s_Instance = null;
 		private Harmony m_Harmony;
 
+		public bool NeedResetBuildPreview = false;
+
 		public static TrarckPlugin Instance
 		{
 			get {
@@ -62,7 +64,6 @@ namespace DspTrarck
 			m_Harmony = new Harmony("com.trarck.dspplugin");
 
 			m_Harmony.PatchAll(typeof(PlayerAction_Build_Patch));
-
 
 			//GameData gd = GameMain.data;
 
