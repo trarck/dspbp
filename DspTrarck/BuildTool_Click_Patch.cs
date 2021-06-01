@@ -31,7 +31,10 @@ namespace DspTrarck
 		[HarmonyPrefix, HarmonyPriority(Priority.Last), HarmonyPatch(typeof(BuildTool_Click), "UpdateRaycast")]
 		public static bool BuildTool_Click_UpdateRaycast_Prefix(ref BuildTool_Click __instance)
 		{
-			__instance.handPrefabDesc = new PrefabDesc();
+			if (TrarckPlugin.Instance.BPBuild)
+			{
+				__instance.handPrefabDesc = new PrefabDesc();
+			}
 			return true;
 
 			//__instance.castTerrain = false;
@@ -410,29 +413,29 @@ namespace DspTrarck
 		[HarmonyPostfix, HarmonyPriority(Priority.Last), HarmonyPatch(typeof(BuildTool_Click), "CreatePrebuilds")]
 		public static void BuildTool_Click_CreatePrebuilds_Postfix(ref BuildTool_Click __instance)
 		{
-			foreach (BuildPreview buildPreview3 in __instance.buildPreviews)
-			{
-				YHDebug.LogFormat("pb: {0},{1}", buildPreview3.objId,buildPreview3.output);
-				if (buildPreview3.condition == EBuildCondition.Ok && buildPreview3.objId != 0)
-				{
-					if (buildPreview3.outputObjId != 0)
-					{
-						YHDebug.LogFormat("Connect1: {0},{1},{2},{3},{4}",buildPreview3.objId, buildPreview3.outputFromSlot, true, buildPreview3.outputObjId, buildPreview3.outputToSlot);
-					}
-					else if (buildPreview3.output != null)
-					{
-						YHDebug.LogFormat("Connect2: {0},{1},{2},{3},{4}", buildPreview3.objId, buildPreview3.outputFromSlot, true, buildPreview3.output.objId, buildPreview3.outputToSlot);
-					}
-					if (buildPreview3.inputObjId != 0)
-					{
-						YHDebug.LogFormat("Connect3: {0},{1},{2},{3},{4}", buildPreview3.objId, buildPreview3.inputToSlot, false, buildPreview3.inputObjId, buildPreview3.inputFromSlot);
-					}
-					else if (buildPreview3.input != null)
-					{
-						YHDebug.LogFormat("Connect4: {0},{1},{2},{3},{4}", buildPreview3.objId, buildPreview3.inputToSlot, false, buildPreview3.input.objId, buildPreview3.inputFromSlot);
-					}
-				}
-			}
+			//foreach (BuildPreview buildPreview3 in __instance.buildPreviews)
+			//{
+			//	YHDebug.LogFormat("pb: {0},{1}", buildPreview3.objId,buildPreview3.output);
+			//	if (buildPreview3.condition == EBuildCondition.Ok && buildPreview3.objId != 0)
+			//	{
+			//		if (buildPreview3.outputObjId != 0)
+			//		{
+			//			YHDebug.LogFormat("Connect1: {0},{1},{2},{3},{4}",buildPreview3.objId, buildPreview3.outputFromSlot, true, buildPreview3.outputObjId, buildPreview3.outputToSlot);
+			//		}
+			//		else if (buildPreview3.output != null)
+			//		{
+			//			YHDebug.LogFormat("Connect2: {0},{1},{2},{3},{4}", buildPreview3.objId, buildPreview3.outputFromSlot, true, buildPreview3.output.objId, buildPreview3.outputToSlot);
+			//		}
+			//		if (buildPreview3.inputObjId != 0)
+			//		{
+			//			YHDebug.LogFormat("Connect3: {0},{1},{2},{3},{4}", buildPreview3.objId, buildPreview3.inputToSlot, false, buildPreview3.inputObjId, buildPreview3.inputFromSlot);
+			//		}
+			//		else if (buildPreview3.input != null)
+			//		{
+			//			YHDebug.LogFormat("Connect4: {0},{1},{2},{3},{4}", buildPreview3.objId, buildPreview3.inputToSlot, false, buildPreview3.input.objId, buildPreview3.inputFromSlot);
+			//		}
+			//	}
+			//}
 
 			if (TrarckPlugin.Instance.NeedResetBuildPreview)
 			{
