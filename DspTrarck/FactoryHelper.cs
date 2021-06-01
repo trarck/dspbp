@@ -22,7 +22,7 @@ namespace DspTrarck
 			return LDB.items.Select(factory.prebuildPool[-objId].protoId)?.prefabDesc.isBelt ?? false;
 		}
 
-		public static Pose[] GetLocalGates(PlanetFactory factory, int objId)
+		public static Pose[] GetLocalSlots(PlanetFactory factory, int objId)
 		{
 			if (objId == 0)
 			{
@@ -47,7 +47,7 @@ namespace DspTrarck
 				}
 				prefabDesc = modelProto2.prefabDesc;
 			}
-			if (!prefabDesc.multiLevel || prefabDesc.multiLevelAllowInserter)
+			if (!prefabDesc.multiLevel || prefabDesc.multiLevelAllowPortsOrSlots)
 			{
 				return prefabDesc.slotPoses;
 			}

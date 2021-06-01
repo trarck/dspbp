@@ -251,7 +251,7 @@ namespace DspTrarck
 				
 				foreach (var connect in connects)
 				{
-					//Debug.LogFormat("[{0}]connect:{1},{2},{3},{4},{5}", connect.isOutput ? "output" : "input", connect.fromObjId, connect.fromSlot, connect.toObjId, connect.toSlot, connect.offset);
+					Debug.LogFormat("[{0}]connect:{1},{2},{3},{4},{5}", connect.isOutput ? "output" : "input", connect.fromObjId, connect.fromSlot, connect.toObjId, connect.toSlot, connect.offset);
 					if (connect.isOutput)
 					{
 						if (entitiesIdToBuildPreviewMap.TryGetValue(connect.fromObjId, out buildPreview))
@@ -343,7 +343,7 @@ namespace DspTrarck
 					else
 					{
 						//on connect or no connect
-						buildPreview.ignoreCollider = true;
+						buildPreview.ignoreCollisionCheck = true;
 					}
 				}
 			}
@@ -353,7 +353,8 @@ namespace DspTrarck
 			{
 				if (bp.desc.isBelt)
 				{
-					bp.ignoreCollider = true;
+					bp.ignoreCollisionCheck = true;
+					bp.dontGenNearCollider = true;
 				}
 			}
 
@@ -361,7 +362,8 @@ namespace DspTrarck
 			{
 				if (bp.desc.isBelt)
 				{
-					bp.ignoreCollider = true;
+					bp.ignoreCollisionCheck = true;
+					bp.dontGenNearCollider = true;
 				}
 			}
 		}
@@ -450,11 +452,11 @@ namespace DspTrarck
 			Quaternion rot = Maths.SphericalRotation(buildPreview.lpos, yaw);
 			buildPreview.lrot = rot * bpEntity.rot;
 
-			YHDebug.LogFormat("SetBuildPreviewPosition:grid={0},offset={1},pos={2},proto={3},type={4},entityId={5},ci={6},yaw={7}", 
-				bpEntity.grid , entityGrid, buildPreview.lpos,
-				bpEntity.protoId,bpEntity.type,bpEntity.entityId,
-				gridOffset,yaw
-				);
+			//YHDebug.LogFormat("SetBuildPreviewPosition:grid={0},offset={1},pos={2},proto={3},type={4},entityId={5},ci={6},yaw={7}", 
+			//	bpEntity.grid , entityGrid, buildPreview.lpos,
+			//	bpEntity.protoId,bpEntity.type,bpEntity.entityId,
+			//	gridOffset,yaw
+			//	);
 
 			if (bpEntity.type == BPEntityType.Inserter)
 			{
@@ -467,11 +469,11 @@ namespace DspTrarck
 				rot = Maths.SphericalRotation(buildPreview.lpos2, yaw);
 				buildPreview.lrot2 = rot * bpEntity.rot2;
 
-				YHDebug.LogFormat("SetBuildPreviewPosition2:grid={0},offset={1},pos={2},proto={3},type={4},entityId={5},ci={6},yaw={7}", 
-					bpEntity.grid2, entityGrid, buildPreview.lpos2, 
-					bpEntity.protoId, bpEntity.type, bpEntity.entityId			  ,
-					gridOffset,yaw
-					);
+				//YHDebug.LogFormat("SetBuildPreviewPosition2:grid={0},offset={1},pos={2},proto={3},type={4},entityId={5},ci={6},yaw={7}", 
+				//	bpEntity.grid2, entityGrid, buildPreview.lpos2, 
+				//	bpEntity.protoId, bpEntity.type, bpEntity.entityId			  ,
+				//	gridOffset,yaw
+				//	);
 			}
 		}
 
@@ -483,7 +485,7 @@ namespace DspTrarck
 				{
 					ResetBuildPreviewRealConnect(buildPreview);
 				}
-				else if (buildPreview.desc.isBelt && buildPreview.ignoreCollider)
+				else if (buildPreview.desc.isBelt && buildPreview.ignoreCollisionCheck)
 				{
 					ResetBuildPreviewCover(buildPreview);
 				}
@@ -629,11 +631,11 @@ namespace DspTrarck
 			{
 				bpEntity.type = BPEntityType.Miner;
 				MinerComponent minerComponent = m_PlanetFactory.factorySystem.minerPool[entity.minerId];
-				bpEntity.refCount = minerComponent.veinCount;
-				if (bpEntity.refCount > 0)
+				bpEntity.paramCount = minerComponent.veinCount;
+				if (bpEntity.paramCount > 0)
 				{
-					bpEntity.refArr = new int[bpEntity.refCount];
-					Array.Copy(minerComponent.veins, bpEntity.refArr, bpEntity.refCount);
+					bpEntity.parameters = new int[bpEntity.paramCount];
+					Array.Copy(minerComponent.veins, bpEntity.parameters, bpEntity.paramCount);
 				}
 			}
 			else if (entity.inserterId > 0)
@@ -641,15 +643,15 @@ namespace DspTrarck
 				bpEntity.type = BPEntityType.Inserter;
 				InserterComponent inserterComponent = m_PlanetFactory.factorySystem.inserterPool[entity.inserterId];
 				ItemProto itemProto = LDB.items.Select(entity.protoId);
-				bpEntity.refCount = (int)((inserterComponent.stt - 0.499f) / itemProto.prefabDesc.inserterSTT);
+				bpEntity.paramCount = (int)((inserterComponent.stt - 0.499f) / itemProto.prefabDesc.inserterSTT);
 				bpEntity.filterId = inserterComponent.filter;
 				bpEntity.pos2 = inserterComponent.pos2;
 				bpEntity.rot2 = inserterComponent.rot2;
 				bpEntity.pickOffset = inserterComponent.pickOffset;
 				bpEntity.insertOffset = inserterComponent.insertOffset;
-				if (bpEntity.refCount > 0)
+				if (bpEntity.paramCount > 0)
 				{
-					bpEntity.refArr = new int[bpEntity.refCount];
+					bpEntity.parameters = new int[bpEntity.paramCount];
 				}
 			}
 			else if (entity.assemblerId > 0)
@@ -737,11 +739,11 @@ namespace DspTrarck
 			buildPreview.inputOffset = bpEntity.pickOffset;
 			buildPreview.outputOffset = bpEntity.insertOffset;
 
-			buildPreview.refCount = bpEntity.refCount;
-			if (bpEntity.refCount > 0)
+			buildPreview.paramCount = bpEntity.paramCount;
+			if (bpEntity.paramCount > 0)
 			{
-				buildPreview.refArr = new int[bpEntity.refCount];
-				Array.Copy(bpEntity.refArr, buildPreview.refArr, bpEntity.refCount);
+				buildPreview.parameters = new int[bpEntity.paramCount];
+				Array.Copy(bpEntity.parameters, buildPreview.parameters, bpEntity.paramCount);
 			}
 
 			buildPreview.previewIndex = -1;
@@ -796,11 +798,11 @@ namespace DspTrarck
 			prebuildData.insertOffset = bpEntity.insertOffset;
 			prebuildData.recipeId = bpEntity.recipeId;
 			prebuildData.filterId = bpEntity.filterId;
-			prebuildData.refCount = bpEntity.refCount;
-			if (bpEntity.refCount > 0)
+			prebuildData.paramCount = bpEntity.paramCount;
+			if (bpEntity.paramCount > 0)
 			{
-				prebuildData.refArr = new int[bpEntity.refCount];
-				Array.Copy(bpEntity.refArr, prebuildData.refArr, bpEntity.refCount);
+				prebuildData.parameters = new int[bpEntity.paramCount];
+				Array.Copy(bpEntity.parameters, prebuildData.parameters, bpEntity.paramCount);
 			}
 
 			return prebuildData;
@@ -1193,7 +1195,7 @@ namespace DspTrarck
 				Vector3 groundTestPos = hitInfo.point;
 
 				PlanetAuxData planetAux = planetData.aux;
-				groundSnappedPos = planetAux.Snap(groundTestPos, castTerrain, castTerrain && planetData.levelized);
+				groundSnappedPos = planetAux.Snap(groundTestPos, castTerrain);
 
 				return true;
 			}

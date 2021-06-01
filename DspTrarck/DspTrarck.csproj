@@ -41,6 +41,9 @@
     <Reference Include="BepInEx">
       <HintPath>Libs\BepInEx.dll</HintPath>
     </Reference>
+    <Reference Include="netstandard">
+      <HintPath>Libs\netstandard.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
@@ -244,12 +247,13 @@
     <Compile Include="BPData.cs" />
     <Compile Include="BPDataWriter.cs" />
     <Compile Include="BPDataReader.cs" />
+    <Compile Include="PlayerAction_Build_Patch.cs" />
     <Compile Include="FactoryBP.cs" />
     <Compile Include="FactoryBPUI.cs" />
     <Compile Include="FactoryHelper.cs" />
     <Compile Include="MultiSelector.cs" />
     <Compile Include="PlanetCoordinate.cs" />
-    <Compile Include="PlayerAction_Build_Patch.cs" />
+    <Compile Include="BuildTool_Click_Patch.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TrarckPlugin.cs" />
     <Compile Include="YH\BinaryHelper.cs" />

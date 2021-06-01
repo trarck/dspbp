@@ -46,7 +46,7 @@ namespace DspTrarck
 			BinaryHelper.TryReadVector2(reader, ref bpEntityData.grid2);
 			bpEntityData.offsetGround2 = reader.ReadSingle();
 
-			bpEntityData.refArr = BinaryHelper.ReadIntArray(reader, ref bpEntityData.refCount);
+			bpEntityData.parameters = BinaryHelper.ReadIntArray(reader, ref bpEntityData.paramCount);
 		}
 
 		public static void ReadEntities(BinaryReader reader, ref List<BPEntityData> entities)

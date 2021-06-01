@@ -46,7 +46,7 @@ namespace DspTrarck
 			BinaryHelper.WriteQuaternion(writer, ref bpEntityData.rot2);
 			BinaryHelper.WriteVector2(writer, ref bpEntityData.grid2);
 			writer.Write(bpEntityData.offsetGround2);
-			BinaryHelper.WriteIntArr(writer, bpEntityData.refArr,0,bpEntityData.refCount);
+			BinaryHelper.WriteIntArr(writer, bpEntityData.parameters,0,bpEntityData.paramCount);
 		}
 
 		public static void WriteEntities(BinaryWriter writer, List<BPEntityData> entities)

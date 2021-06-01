@@ -125,8 +125,8 @@ namespace DspTrarck
 		public float offsetGround2;
 
 		//for miner	   insert
-		public int refCount;
-		public int[] refArr;
+		public int paramCount;
+		public int[] parameters;
 	}
 
 	[Serializable]

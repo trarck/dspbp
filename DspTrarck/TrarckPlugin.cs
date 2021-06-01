@@ -63,6 +63,7 @@ namespace DspTrarck
 		{
 			m_Harmony = new Harmony("com.trarck.dspplugin");
 
+			m_Harmony.PatchAll(typeof(BuildTool_Click_Patch));
 			m_Harmony.PatchAll(typeof(PlayerAction_Build_Patch));
 
 			//GameData gd = GameMain.data;
@@ -94,22 +95,24 @@ namespace DspTrarck
 
 		void Update()
 		{
-			//如果不是build模式，什么都不做。
-			if (GameMain.mainPlayer != null
+			if (m_EnterFactoryBPMode)
+			{
+				//如果不是build模式，什么都不做。
+				if (GameMain.mainPlayer != null
 				&& GameMain.mainPlayer.controller != null
 				&& GameMain.mainPlayer.controller.cmd.type != ECommand.Build)
-			{
-
-				if (m_EnterFactoryBPMode)
 				{
+
+					Debug.Log("exit bp mode");
 					m_EnterFactoryBPMode = false;
 					m_BPBuild = false;
 
 					m_MultiSelector.Clear();
 					m_FactoryBPUI.Clear();
 					m_FactoryBP.Clear();
+
+					return;
 				}
-				return;
 			}
 
 			//更新键盘事件
@@ -118,6 +121,7 @@ namespace DspTrarck
 			//是否开启蓝图
 			if (m_BPEnterKey.IsDown())
 			{
+				Debug.Log("enter bp mode");
 				m_EnterFactoryBPMode = !m_EnterFactoryBPMode;
 
 				if (m_MultiSelector != null)
