@@ -153,6 +153,32 @@ namespace DspTrarck
 				TrarckPlugin.Instance.factoryBP.UpdateBuildPosition(__instance.castGroundPosSnapped, __instance.yaw);
 				__instance.buildPreviews.Clear();
 				__instance.buildPreviews.AddRange(TrarckPlugin.Instance.factoryBP.buildPreviews);
+
+				//if (VFInput._buildConfirm.onDown)
+				//{
+
+				//	foreach (BuildPreview buildPreview in __instance.buildPreviews)
+				//	{
+				//		if (buildPreview.desc.isBelt && buildPreview.ignoreCollisionCheck)
+				//		{
+				//			//parse cover
+				//			int overlappedCount = TrarckPlugin.Instance.factoryBP.GetOverlappedObjectsNonAlloc(buildPreview.lpos, 0.3f, 3f, false, _overlappedIds);
+				//			//YHDebug.LogFormat("CreatePrebuilds_Prefix:belt over {0}", overlappedCount);
+				//			if (overlappedCount > 0)
+				//			{
+				//				int objId = _overlappedIds[0];
+				//				bool isBelt = FactoryHelper.ObjectIsBelt(__instance.player.factory, objId);
+				//				if (isBelt)
+				//				{
+				//					buildPreview.coverObjId = objId;
+				//					buildPreview.willRemoveCover = false;
+
+				//					TrarckPlugin.Instance.NeedResetBuildPreview = true;
+				//				}
+				//			}
+				//		}
+				//	}
+				//}
 			}
 
 			return runOriginal;
