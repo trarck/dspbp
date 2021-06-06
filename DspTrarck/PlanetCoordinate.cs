@@ -693,7 +693,7 @@ namespace DspTrarck
 		{
 			grid.y += offsetGrid.y;
 
-			int latIndex = LatGridToIndex(grid.x);
+			int latIndex = LatGridToIndex(grid.y);
 			int longitudeSegment = DetermineLongitudeSegmentCount(latIndex, segment);
 
 			grid.x = (float)(longitude / (Math.PI * 2f) * longitudeSegment);
