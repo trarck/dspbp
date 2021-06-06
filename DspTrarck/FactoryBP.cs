@@ -416,13 +416,14 @@ namespace DspTrarck
 			{
 
 				Vector3 gcs = m_PlanetCoordinate.LocalToGcs(pos);
+				
 
 				Vector2 buildGrid = Vector2.zero;
 				if (currentData.posType == BPData.PosType.Relative)
 				{
 					buildGrid = m_PlanetCoordinate.GcsToGrid(gcs);
 				}
-
+				//Debug.LogFormat("UpdatePos:pos:({0},{1},{2}),gcs:({3},{4}),grid:({5},{6})", pos.x, pos.y, pos.z, gcs.x, gcs.y,buildGrid.x,buildGrid.y);
 				for (int i = 0; i < m_BuildPreviews.Count; ++i)
 				{
 					BPEntityData entityData = m_CurrentEntities[i];
@@ -452,11 +453,11 @@ namespace DspTrarck
 			Quaternion rot = Maths.SphericalRotation(buildPreview.lpos, yaw);
 			buildPreview.lrot = rot * bpEntity.rot;
 
-			//YHDebug.LogFormat("SetBuildPreviewPosition:grid={0},offset={1},pos={2},proto={3},type={4},entityId={5},ci={6},yaw={7}", 
-			//	bpEntity.grid , entityGrid, buildPreview.lpos,
-			//	bpEntity.protoId,bpEntity.type,bpEntity.entityId,
-			//	gridOffset,yaw
-			//	);
+			YHDebug.LogFormat("SetBuildPreviewPosition:grid={0},offset={1},pos={2},proto={3},type={4},entityId={5},ci={6},yaw={7},buildGrid={8},long={9}",
+				bpEntity.grid, entityGrid, buildPreview.lpos,
+				bpEntity.protoId, bpEntity.type, bpEntity.entityId,
+				gridOffset, yaw	,buildGrid,longitude
+				);
 
 			if (bpEntity.type == BPEntityType.Inserter)
 			{
