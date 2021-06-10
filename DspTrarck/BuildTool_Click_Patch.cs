@@ -318,16 +318,38 @@ namespace DspTrarck
 			}
 		}
 
+		private static void ExpandConnGraph(ConnGizmoGraph connGizmoGraph)
+		{
+			if (connGizmoGraph.pointCount >= connGizmoGraph.points.Length)
+			{
+				int newLen = connGizmoGraph.points.Length * 2;
+				Vector3[] pointsCurrent = new Vector3[newLen];
+				connGizmoGraph.pointsCurrent.CopyTo(pointsCurrent, 0);
+				connGizmoGraph.pointsCurrent = pointsCurrent;
+
+				Vector3[] points = new Vector3[newLen];
+				connGizmoGraph.points.CopyTo(points, 0);
+				connGizmoGraph.points = points;
+
+				var colors = new uint[newLen];
+				connGizmoGraph.colors.CopyTo(colors, 0);
+				connGizmoGraph.colors = colors;
+			}
+		}
+
 		[HarmonyPostfix, HarmonyPriority(Priority.Last), HarmonyPatch(typeof(BuildTool_Click), "UpdatePreviewModelConditions")]
 		public static void BuildTool_Click_UpdatePreviewModelConditions_Postfix(ref BuildTool_Click __instance, ref BuildModel model)
 		{
 			if (TrarckPlugin.Instance.BPBuild)
 			{
+
+
 				for (int i = 0; i < __instance.buildPreviews.Count; i++)
 				{
 					BuildPreview buildPreview = __instance.buildPreviews[i];
 					if (buildPreview.isConnNode)
 					{
+						ExpandConnGraph(model.connGraph);
 						model.connGraph.AddPoint(buildPreview.lpos, (buildPreview.condition != EBuildCondition.Ok) ? 0U : 4U);
 					}
 				}
