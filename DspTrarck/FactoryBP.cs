@@ -251,7 +251,7 @@ namespace DspTrarck
 				
 				foreach (var connect in connects)
 				{
-					Debug.LogFormat("[{0}]connect:{1},{2},{3},{4},{5}", connect.isOutput ? "output" : "input", connect.fromObjId, connect.fromSlot, connect.toObjId, connect.toSlot, connect.offset);
+					YHDebug.LogFormat("[{0}]connect:{1},{2},{3},{4},{5}", connect.isOutput ? "output" : "input", connect.fromObjId, connect.fromSlot, connect.toObjId, connect.toSlot, connect.offset);
 					if (connect.isOutput)
 					{
 						if (entitiesIdToBuildPreviewMap.TryGetValue(connect.fromObjId, out buildPreview))

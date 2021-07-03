@@ -212,6 +212,15 @@ namespace DspTrarck
 					bpName = GetDefaultName();
 				}
 
+				//不要电线杆，会有碰撞问题
+				for (int i = entities.Count - 1; i >= 0; --i)
+				{
+					if (entities[i].powerNodeId != 0)
+					{
+						entities.RemoveAt(i);
+					}
+				}
+
 				if (noBelt)
 				{
 					//filter etities
