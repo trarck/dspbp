@@ -283,6 +283,7 @@
     <Compile Include="BPData.cs" />
     <Compile Include="BPDataWriter.cs" />
     <Compile Include="BPDataReader.cs" />
+    <Compile Include="BuildTool_BluePrint.cs" />
     <Compile Include="PlayerAction_Build_Patch.cs" />
     <Compile Include="FactoryBP.cs" />
     <Compile Include="FactoryBPUI.cs" />

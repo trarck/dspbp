@@ -63,7 +63,6 @@ namespace DspTrarck
 		{
 			m_Harmony = new Harmony("com.trarck.dspplugin");
 
-			m_Harmony.PatchAll(typeof(BuildTool_Click_Patch));
 			m_Harmony.PatchAll(typeof(PlayerAction_Build_Patch));
 
 			//GameData gd = GameMain.data;
