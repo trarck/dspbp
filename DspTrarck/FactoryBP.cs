@@ -343,7 +343,7 @@ namespace DspTrarck
 					else
 					{
 						//on connect or no connect
-						buildPreview.ignoreCollisionCheck = true;
+						buildPreview.genNearColliderArea2 = 0;
 					}
 				}
 			}
@@ -353,8 +353,7 @@ namespace DspTrarck
 			{
 				if (bp.desc.isBelt)
 				{
-					bp.ignoreCollisionCheck = true;
-					bp.dontGenNearCollider = true;
+					bp.genNearColliderArea2 = 0;
 				}
 			}
 
@@ -362,8 +361,7 @@ namespace DspTrarck
 			{
 				if (bp.desc.isBelt)
 				{
-					bp.ignoreCollisionCheck = true;
-					bp.dontGenNearCollider = true;
+					bp.genNearColliderArea2 = 0;
 				}
 			}
 		}
@@ -486,7 +484,7 @@ namespace DspTrarck
 				{
 					ResetBuildPreviewRealConnect(buildPreview);
 				}
-				else if (buildPreview.desc.isBelt && buildPreview.ignoreCollisionCheck)
+				else if (buildPreview.desc.isBelt && buildPreview.genNearColliderArea2 <0.001f)
 				{
 					ResetBuildPreviewCover(buildPreview);
 				}
@@ -726,7 +724,7 @@ namespace DspTrarck
 			}
 			
 			BuildPreview buildPreview = new  BuildPreview ();
-			buildPreview.ResetInfos();
+			buildPreview.ResetAll();
 			buildPreview.item = item;
 			buildPreview.desc = prefabDesc;
 			buildPreview.needModel = bpEntity.type !=BPEntityType.Belt;
@@ -748,7 +746,12 @@ namespace DspTrarck
 			}
 
 			buildPreview.previewIndex = -1;
-			buildPreview.isConnNode = bpEntity.type == BPEntityType.Belt;
+			if (bpEntity.type == BPEntityType.Belt)
+			{
+				buildPreview.isConnNode = true;
+				buildPreview.genNearColliderArea2 =20;
+			}
+
 
 			return buildPreview;
 		}

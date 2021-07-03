@@ -1465,6 +1465,9 @@ namespace DspTrarck
 			bool flag = false;
 			int num = 0;
 			tmp_links.Clear();
+			TrarckPlugin.Instance.NeedResetBuildPreview = false;
+			FactoryBP factoryBP = TrarckPlugin.Instance.factoryBP;
+
 			foreach (BuildPreview buildPreview in base.buildPreviews)
 			{
 				if (buildPreview.desc.isBelt)
@@ -1488,6 +1491,25 @@ namespace DspTrarck
 					for (int i = 0; i < buildPreview.paramCount; i++)
 					{
 						prebuild.parameters[i] = buildPreview.parameters[i];
+					}
+
+					if (buildPreview.genNearColliderArea2 < 0.001f)
+					{
+						//parse cover
+						int overlappedCount = factoryBP.GetOverlappedObjectsNonAlloc(buildPreview.lpos, 0.3f, 3f, false, _overlappedIds);
+						YHDebug.LogFormat("CreatePrebuilds_Prefix:belt over {0}", overlappedCount);
+						if (overlappedCount > 0)
+						{
+							int objId = _overlappedIds[0];
+							bool isBelt = FactoryHelper.ObjectIsBelt(player.factory, objId);
+							if (isBelt)
+							{
+								buildPreview.coverObjId = objId;
+								buildPreview.willRemoveCover = false;
+
+								TrarckPlugin.Instance.NeedResetBuildPreview = true;
+							}
+						}
 					}
 					flag = true;
 					if (buildPreview.coverObjId == 0 || buildPreview.willRemoveCover)
@@ -1588,6 +1610,50 @@ namespace DspTrarck
 				}
 				else
 				{
+					if (buildPreview.desc.isInserter)
+					{
+						//parse cover
+						if (buildPreview.input == null)
+						{
+							int overlappedCount = factoryBP.GetOverlappedObjectsNonAlloc(buildPreview.lpos, 0.3f, 3f, false, _overlappedIds);
+							YHDebug.LogFormat("CreatePrebuilds_Prefix:insert input over {0}", overlappedCount);
+							if (overlappedCount > 0)
+							{
+								int objId = _overlappedIds[0];
+								bool isBelt = FactoryHelper.ObjectIsBelt(player.factory, objId);
+								if (isBelt)
+								{
+									buildPreview.inputObjId = objId;
+									buildPreview.inputToSlot = 1;
+									buildPreview.inputFromSlot = -1;
+									buildPreview.inputOffset = 0;
+
+									TrarckPlugin.Instance.NeedResetBuildPreview = true;
+								}
+							}
+						}
+
+						if (buildPreview.output == null)
+						{
+							int overlappedCount = factoryBP.GetOverlappedObjectsNonAlloc(buildPreview.lpos2, 0.3f, 3f, false, _overlappedIds);
+							YHDebug.LogFormat("CreatePrebuilds_Prefix:insert output over {0}", overlappedCount);
+							if (overlappedCount > 0)
+							{
+								int objId = _overlappedIds[0];
+								bool isBelt = FactoryHelper.ObjectIsBelt(player.factory, objId);
+								if (isBelt)
+								{
+									buildPreview.outputObjId = objId;
+									buildPreview.outputFromSlot = 0;
+									buildPreview.outputToSlot = -1;
+									buildPreview.outputOffset = 0;
+									TrarckPlugin.Instance.NeedResetBuildPreview = true;
+								}
+							}
+						}
+					}
+
+
 					if (buildPreview.condition == EBuildCondition.Ok && buildPreview.coverObjId == 0)
 					{
 						if (buildPreview.isConnNode)

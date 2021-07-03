@@ -433,7 +433,7 @@ namespace DspTrarck
 								}
 							}
 						}
-						else if (buildPreview.desc.isBelt && buildPreview.ignoreCollisionCheck)
+						else if (buildPreview.desc.isBelt && buildPreview.genNearColliderArea2<0.001f)
 						{
 							//parse cover
 							int overlappedCount = factoryBP.GetOverlappedObjectsNonAlloc(buildPreview.lpos, 0.3f, 3f, false, _overlappedIds);
