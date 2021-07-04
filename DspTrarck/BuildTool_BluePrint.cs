@@ -66,21 +66,25 @@ namespace DspTrarck
 
 		protected override void _OnInit()
 		{
+			YHDebug.Log("Init in bp tools");
 			dotsSnapped = new Vector3[15];
 		}
 
 		protected override void _OnFree()
 		{
+			YHDebug.Log("free in bp tools");
 			dotsSnapped = null;
 		}
 
 		protected override void _OnOpen()
 		{
+			YHDebug.Log("open bp tools");
 			yaw = BuildingParameters.template.yaw;
 		}
 
 		protected override void _OnClose()
 		{
+			YHDebug.Log("close bp tools");
 			isDragging = false;
 			yaw = 0f;
 			gap = 0f;
@@ -110,7 +114,7 @@ namespace DspTrarck
 
 		public override bool DetermineActive()
 		{
-			return base.controller.cmd.mode == 1 && TrarckPlugin.Instance.BPBuild;
+			return controller.cmd.type == ECommand.Build && TrarckPlugin.Instance.BPBuild;
 		}
 
 		public bool UpdateHandItem()
@@ -565,22 +569,6 @@ namespace DspTrarck
 			}
 		}
 
-		public bool IsOtherBeltOutput(BuildPreview buildPreview)
-		{
-			if (buildPreviews != null && buildPreviews.Count > 0)
-			{
-				for (int i = 0; i < base.buildPreviews.Count; i++)
-				{
-					BuildPreview other = base.buildPreviews[i];
-					if (other.desc.isBelt && other.output == buildPreview)
-					{
-						return true;
-					}
-				}
-			}
-			return false;
-		}
-
 		public bool IsOtherBeltIntput(BuildPreview buildPreview)
 		{
 			if (buildPreviews != null && buildPreviews.Count > 0)
@@ -588,7 +576,7 @@ namespace DspTrarck
 				for (int i = 0; i < base.buildPreviews.Count; i++)
 				{
 					BuildPreview other = base.buildPreviews[i];
-					if (other.desc.isBelt &&  other.input == buildPreview)
+					if (other.desc.isBelt &&  other.output== buildPreview)
 					{
 						return true;
 					}
@@ -772,6 +760,140 @@ namespace DspTrarck
 						continue;
 					}
 				}
+
+				//belt
+				if (isBelt)
+				{
+					bool flag10 = buildPreview.input != null && buildPreview.input.desc.isBelt;
+					bool flag11 = buildPreview.output != null && buildPreview.output.desc.isBelt;
+					Vector3 vector5 = buildPreview.lpos.normalized * 0.22f;
+					Vector3 lpos2 = buildPreview.lpos;
+					Vector3 vector4 = (flag10 ? buildPreview.input.lpos : lpos2);
+					Vector3 vector3 = (flag11 ? buildPreview.output.lpos : lpos2);
+					vector4 = (vector4 - lpos2) * 0.2f + lpos2;
+					vector3 = (vector3 - lpos2) * 0.2f + lpos2;
+					lpos2 += vector5;
+					vector4 += vector5;
+					vector3 += vector5;
+
+					int num7 = 0;
+					num7 = ((!(flag11 || flag10)) ? Physics.OverlapSphereNonAlloc(lpos2, 0.28f, BuildTool._tmp_cols, 425984, QueryTriggerInteraction.Collide) : Physics.OverlapCapsuleNonAlloc(vector4, vector3, 0.28f, BuildTool._tmp_cols, 425984, QueryTriggerInteraction.Collide));
+					if (num7 > 0)
+					{
+						bool flag12 = false;
+						for (int j = 0; j < num7; j++)
+						{
+							if (planet.physics.GetColliderData(BuildTool._tmp_cols[j], out var cd))
+							{
+								int num8 = 0;
+								if (cd.objType == EObjectType.Entity)
+								{
+									num8 = cd.objId;
+								}
+								else if (cd.objType == EObjectType.Prebuild)
+								{
+									num8 = -cd.objId;
+								}
+								if (num8 != 0)
+								{
+									if (ObjectIsBelt(num8) || GetLocalPorts(num8).Length != 0)
+									{
+										if (buildPreview.output == null || !IsOtherBeltIntput(buildPreview))
+										{
+											continue;
+										}
+									}
+								}
+							}
+							flag12 = true;
+							break;
+						}
+						if (flag12)
+						{
+							buildPreview.condition = EBuildCondition.Collide;
+							continue;
+						}
+					}
+
+					float num110 = planet.data.QueryModifiedHeight(lpos2) - (planet.realRadius + 0.2f);
+					if (num110 < 0f)
+					{
+						num110 = 0f;
+					}
+					Vector3 position2 = lpos2 + lpos2.normalized * (num110 + 0.4f);
+					num7 = Physics.OverlapSphereNonAlloc(position2, 0.5f, BuildTool._tmp_cols, 2048, QueryTriggerInteraction.Collide);
+					if (num7 > 0)
+					{
+						buildPreview.condition = EBuildCondition.Collide;
+						continue;
+					}
+
+					bool flag14 = false;
+					bool flag15 = false;
+					Vector3 vector114 = Vector3.zero;
+					Vector3 vector115 = Vector3.zero;
+					BuildPreview input = buildPreview.input;
+					BuildPreview output = buildPreview.output;
+					if (input != null)
+					{
+						flag14 = true;
+						vector114 = buildPreview.input.lpos;
+					}
+
+					if (output != null)
+					{
+						flag15 = true;
+						vector115 = buildPreview.output.lpos;
+					}
+
+					float num11 = (float)Math.PI;
+					if (flag14 && flag15)
+					{
+						num11 = Maths.SphericalAngleAOBInRAD(buildPreview.lpos, vector114, vector115);
+						if (num11 < 0.87266463f)
+						{
+							buildPreview.condition = EBuildCondition.TooBend;
+							continue;
+						}
+					}
+					float num12 = 0f;
+					if (flag15)
+					{
+						num12 = Mathf.Abs(Maths.SphericalSlopeRatio(buildPreview.lpos, vector115));
+						if (num12 > 0.75f)
+						{
+							buildPreview.condition = EBuildCondition.TooSteep;
+							continue;
+						}
+
+						Vector3 vector6 = vector115 - buildPreview.lpos;
+						Vector3 normalized = buildPreview.lpos.normalized;
+						_ = vector6 - Vector3.Dot(vector6, normalized) * normalized;
+						if ((buildPreview.lpos - vector115).magnitude < 0.4f)
+						{
+							buildPreview.condition = EBuildCondition.TooClose;
+							continue;
+						}
+					}
+					if (flag14)
+					{
+						num12 = Mathf.Max(Mathf.Abs(Maths.SphericalSlopeRatio(vector114, buildPreview.lpos)), num12);
+						if (num12 > 0.75f)
+						{
+							buildPreview.condition = EBuildCondition.TooSteep;
+							continue;
+						}
+					}
+
+					if (num11 < 2.5f && num12 > 0.1f)
+					{
+						buildPreview.condition = EBuildCondition.TooBendToLift;
+						continue;
+					}
+
+					continue;
+				}
+
 				if (buildPreview.desc.hasBuildCollider)
 				{
 					ColliderData[] buildColliders = buildPreview.desc.buildColliders;
@@ -900,6 +1022,7 @@ namespace DspTrarck
 						continue;
 					}
 				}
+
 				if (buildPreview2.coverObjId != 0 && buildPreview.desc.isInserter)
 				{
 					if (buildPreview.output == buildPreview2)
@@ -1282,136 +1405,6 @@ namespace DspTrarck
 					buildPreview.SetOneParameter(oneParameter);
 				}
 
-				//belt
-				if (isBelt)
-				{
-					bool flag10 = buildPreview.input != null && buildPreview.input.desc.isBelt;
-					bool flag11 = buildPreview.output != null && buildPreview.output.desc.isBelt;
-					Vector3 vector5 = buildPreview.lpos.normalized * 0.22f;
-					Vector3 lpos2 = buildPreview.lpos;
-					Vector3 vector4 = (flag10 ? buildPreview.input.lpos : lpos2);
-					Vector3 vector3 = (flag11 ? buildPreview.output.lpos : lpos2);
-					vector4 = (vector4 - lpos2) * 0.2f + lpos2;
-					vector3 = (vector3 - lpos2) * 0.2f + lpos2;
-					lpos2 += vector5;
-					vector4 += vector5;
-					vector3 += vector5;
-
-					int num7 = 0;
-					num7 = ((!(flag11 || flag10)) ? Physics.OverlapSphereNonAlloc(lpos2, 0.28f, BuildTool._tmp_cols, 425984, QueryTriggerInteraction.Collide) : Physics.OverlapCapsuleNonAlloc(vector4, vector3, 0.28f, BuildTool._tmp_cols, 425984, QueryTriggerInteraction.Collide));
-					if (num7 > 0)
-					{
-						bool flag12 = false;
-						for (int j = 0; j < num7; j++)
-						{
-							if (planet.physics.GetColliderData(BuildTool._tmp_cols[j], out var cd))
-							{
-								int num8 = 0;
-								if (cd.objType == EObjectType.Entity)
-								{
-									num8 = cd.objId;
-								}
-								else if (cd.objType == EObjectType.Prebuild)
-								{
-									num8 = -cd.objId;
-								}
-								if (num8 != 0)
-								{
-									if (ObjectIsBelt(num8) || GetLocalPorts(num8).Length != 0)
-									{
-										if (buildPreview.output == null || IsOtherBeltIntput(buildPreview))
-										{
-											continue;
-										}
-									}
-								}
-							}
-							flag12 = true;
-							break;
-						}
-						if (flag12)
-						{
-							buildPreview.condition = EBuildCondition.Collide;
-							continue;
-						}
-					}
-				
-					float num110 = planet.data.QueryModifiedHeight(lpos2) - (planet.realRadius + 0.2f);
-					if (num110 < 0f)
-					{
-						num110 = 0f;
-					}
-					Vector3 position2 = lpos2 + lpos2.normalized * (num110 + 0.4f);
-					num7 = Physics.OverlapSphereNonAlloc(position2, 0.5f, BuildTool._tmp_cols, 2048, QueryTriggerInteraction.Collide);
-					if (num7 > 0)
-					{
-						buildPreview.condition = EBuildCondition.Collide;
-						continue;
-					}
-
-					bool flag14 = false;
-					bool flag15 = false;
-					Vector3 vector114 = Vector3.zero;
-					Vector3 vector115 = Vector3.zero;
-					BuildPreview input = buildPreview.input;
-					BuildPreview output = buildPreview.output;
-					if (input != null)
-					{
-						flag14 = true;
-						vector114 = buildPreview.input.lpos;
-					}
-
-					if (output != null)
-					{
-						flag15 = true;
-						vector115 = buildPreview.output.lpos;
-					}
-
-					float num11 = (float)Math.PI;
-					if (flag14 && flag15)
-					{
-						num11 = Maths.SphericalAngleAOBInRAD(buildPreview.lpos, vector114, vector115);
-						if (num11 < 0.87266463f)
-						{
-							buildPreview.condition = EBuildCondition.TooBend;
-							continue;
-						}
-					}
-					float num12 = 0f;
-					if (flag15)
-					{
-						num12 = Mathf.Abs(Maths.SphericalSlopeRatio(buildPreview.lpos, vector115));
-						if (num12 > 0.75f)
-						{
-							buildPreview.condition = EBuildCondition.TooSteep;
-							continue;
-						}
-
-						Vector3 vector6 = vector115 - buildPreview.lpos;
-						Vector3 normalized = buildPreview.lpos.normalized;
-						_ = vector6 - Vector3.Dot(vector6, normalized) * normalized;
-						if ((buildPreview.lpos - vector115).magnitude < 0.4f)
-						{
-							buildPreview.condition = EBuildCondition.TooClose;
-							continue;
-						}
-					}
-					if (flag14)
-					{
-						num12 = Mathf.Max(Mathf.Abs(Maths.SphericalSlopeRatio(vector114, buildPreview.lpos)), num12);
-						if (num12 > 0.75f)
-						{
-							buildPreview.condition = EBuildCondition.TooSteep;
-							continue;
-						}
-					}
-
-					if (num11 < 2.5f && num12 > 0.1f)
-					{
-						buildPreview.condition = EBuildCondition.TooBendToLift;
-						continue;
-					}
-				}
 			}
 			bool flag7 = true;
 			for (int num61 = 0; num61 < base.buildPreviews.Count; num61++)
@@ -1847,6 +1840,11 @@ namespace DspTrarck
 			{
 				actionBuild.buildTargetPositionWanted = castGroundPosSnapped;
 			}
+
+			if (TrarckPlugin.Instance.NeedResetBuildPreview)
+			{
+				TrarckPlugin.Instance.factoryBP.ResetBuildPreviewsRealChanges();
+			}
 			GC.Collect();
 		}
 
@@ -2006,6 +2004,7 @@ namespace DspTrarck
 			bool num = !VFInput._godModeMechaMove;
 			bool flag = VFInput.rtsCancel.onDown || VFInput.escKey.onDown || VFInput.escape || VFInput._buildModeKey.onDown;
 			bool flag2 = !VFInput.onGUI && VFInput.inScreen;
+			YHDebug.LogFormat("esc logic:{0},{1},{2}", num, flag, flag2);
 			if (num && flag && flag2)
 			{
 				VFInput.UseBuildKey();

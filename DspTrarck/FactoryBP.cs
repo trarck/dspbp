@@ -266,12 +266,12 @@ namespace DspTrarck
 							}
 							else
 							{
-								Debug.LogFormat("Can't find to entity {0}", connect.toObjId);
+								YHDebug.LogFormat("Can't find to entity {0}", connect.toObjId);
 							}
 						}
 						else
 						{
-							Debug.LogFormat("Can't find from entity {0}", connect.fromObjId);
+							YHDebug.LogFormat("Can't find from entity {0}", connect.fromObjId);
 						}
 					}
 					else
@@ -289,12 +289,12 @@ namespace DspTrarck
 							}
 							else
 							{
-								Debug.LogFormat("Can't find to entity {0}", connect.toObjId);
+								YHDebug.LogFormat("Can't find to entity {0}", connect.toObjId);
 							}
 						}
 						else
 						{
-							Debug.LogFormat("Can't find from entity {0}", connect.fromObjId);
+							YHDebug.LogFormat("Can't find from entity {0}", connect.fromObjId);
 						}
 					}
 				}
@@ -348,7 +348,7 @@ namespace DspTrarck
 				}
 			}
 
-			Debug.LogFormat("inputs Count:{0},outs Count:{1}", inputBelts.Count, outputBelts.Count);
+			YHDebug.LogFormat("inputs Count:{0},outs Count:{1}", inputBelts.Count, outputBelts.Count);
 			foreach (var bp in inputBelts)
 			{
 				if (bp.desc.isBelt)

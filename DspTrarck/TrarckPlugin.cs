@@ -102,14 +102,7 @@ namespace DspTrarck
 				&& GameMain.mainPlayer.controller.cmd.type != ECommand.Build)
 				{
 
-					Debug.Log("exit bp mode");
-					m_EnterFactoryBPMode = false;
-					m_BPBuild = false;
-
-					m_MultiSelector.Clear();
-					m_FactoryBPUI.Clear();
-					m_FactoryBP.Clear();
-
+					ExitBluePrintMode();
 					return;
 				}
 			}
@@ -120,12 +113,13 @@ namespace DspTrarck
 			//是否开启蓝图
 			if (m_BPEnterKey.IsDown())
 			{
-				Debug.Log("enter bp mode");
-				m_EnterFactoryBPMode = !m_EnterFactoryBPMode;
-
-				if (m_MultiSelector != null)
+				if (m_EnterFactoryBPMode)
 				{
-					m_MultiSelector.enableSelect = m_EnterFactoryBPMode;
+					ExitBluePrintMode();
+				}
+				else
+				{
+					EnterBluePrintMode();
 				}
 			}
 
@@ -148,7 +142,7 @@ namespace DspTrarck
 
 				if (m_CopyEntitiesKey.IsDown())
 				{
-					Debug.Log("On copy entities Key down");
+					YHDebug.Log("On copy entities Key down");
 					//copy
 					CopyEntities();
 				}
@@ -201,6 +195,26 @@ namespace DspTrarck
 			}
 		}
 
+		private void EnterBluePrintMode()
+		{
+			YHDebug.Log("enter bp mode");
+			m_EnterFactoryBPMode = true;
+			if (m_MultiSelector != null)
+			{
+				m_MultiSelector.enableSelect = true;
+			}
+		}
+
+		private void ExitBluePrintMode()
+		{
+			YHDebug.Log("exit bp mode");
+			m_EnterFactoryBPMode = false;
+			m_BPBuild = false;
+
+			m_MultiSelector.Clear();
+			m_FactoryBPUI.Clear();
+			m_FactoryBP.Clear();
+		}
 
 		private string CopyEntities(List<EntityData> entities,string bpName,bool noBelt)
 		{

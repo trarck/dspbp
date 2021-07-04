@@ -12,7 +12,7 @@ namespace DspTrarck
 		{
 			BuildTool_BluePrint bpTool = new BuildTool_BluePrint();
 			List<BuildTool> tools = new List<BuildTool>(__instance.tools);
-			tools.Add(bpTool);
+			tools.Insert(1,bpTool);
 			__instance.tools = tools.ToArray();
 		}
 
@@ -30,5 +30,11 @@ namespace DspTrarck
 
 			return runOriginal;
 		}
+
+		//[HarmonyPostfix, HarmonyPriority(Priority.Last), HarmonyPatch(typeof(PlayerAction_Build), "DetermineActive")]
+		//public static void PlayerAction_Build_DetermineActive_Postfix(ref PlayerAction_Build __instance, ref bool __result)
+		//{
+		//	Debug.LogFormat("PlayerAction_Build after DetermineActive {0},{1}", TrarckPlugin.Instance.BPBuild,__result);
+		//}
 	}
 }
