@@ -13,7 +13,8 @@ namespace DspTrarck
         private string m_BPName="";
 
         private bool m_CopyAdd;
-        private bool m_CopyWithoutBelt;
+        private bool m_WithoutBelt;
+        private bool m_WithoutPowerNode;
 
         private List<string> m_BPFiles;
 
@@ -47,8 +48,9 @@ namespace DspTrarck
             }
         }
 
-        public bool isCopyWithoutBelt => m_CopyWithoutBelt;
+        public bool isWithoutBelt => m_WithoutBelt;
 
+        public bool isWithoutPowerNode => m_WithoutPowerNode;
         public void Init(FactoryBP fbp)
         {
             factoryBP = fbp;
@@ -58,7 +60,8 @@ namespace DspTrarck
         {
             m_BPName = "";
             m_CopyAdd = false;
-            m_CopyWithoutBelt = false;
+            m_WithoutBelt = false;
+            m_WithoutPowerNode = false;
             if (m_BPFiles != null)
             {
                 m_BPFiles.Clear();
@@ -115,9 +118,10 @@ namespace DspTrarck
                 //copy
                 GUILayout.BeginHorizontal();
                 {
-                    GUILayout.Label("Copy");
+                    GUILayout.Label("Create");
                     m_CopyAdd = GUILayout.Toggle(m_CopyAdd, "Add");
-                    m_CopyWithoutBelt = GUILayout.Toggle(m_CopyWithoutBelt, "NoBeil");
+                    m_WithoutBelt = GUILayout.Toggle(m_WithoutBelt, "NoBeil");
+                    m_WithoutPowerNode = GUILayout.Toggle(m_WithoutPowerNode, "NoPower");
                 }
                 GUILayout.EndHorizontal();
 

@@ -59,6 +59,14 @@ namespace DspTrarck
 			}
 		}
 
+		public FactoryBPUI factoryBPUI
+		{
+			get
+			{
+				return m_FactoryBPUI;
+			}
+		}
+
 		void Awake()
 		{
 			m_Harmony = new Harmony("com.trarck.dspplugin");
@@ -255,7 +263,7 @@ namespace DspTrarck
 
 		private void CopyEntities()
 		{
-			string name=CopyEntities(m_MultiSelector.selectEntities, m_FactoryBPUI.bpName, m_FactoryBPUI.isCopyWithoutBelt);
+			string name=CopyEntities(m_MultiSelector.selectEntities, m_FactoryBPUI.bpName, m_FactoryBPUI.isWithoutBelt);
 			if (string.IsNullOrEmpty(m_FactoryBPUI.bpName))
 			{
 				m_FactoryBPUI.bpName = name;

@@ -9,7 +9,7 @@ using YH.Log;
 
 namespace DspTrarck
 {
-	public class BuildTool_BluePrint : BuildTool
+	public class BuildTool_BluePrint_Build : BuildTool
 	{
 		public ItemProto handItem;
 

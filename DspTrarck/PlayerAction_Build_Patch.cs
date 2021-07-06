@@ -10,7 +10,7 @@ namespace DspTrarck
 		[HarmonyPostfix, HarmonyPriority(Priority.Last), HarmonyPatch(typeof(PlayerAction_Build), "Init")]
 		public static void PlayerAction_Build_Init_Postfix(ref PlayerAction_Build __instance, ref Player _player)
 		{
-			BuildTool_BluePrint bpTool = new BuildTool_BluePrint();
+			BuildTool_BluePrint_Build bpTool = new BuildTool_BluePrint_Build();
 			List<BuildTool> tools = new List<BuildTool>(__instance.tools);
 			tools.Insert(1,bpTool);
 			__instance.tools = tools.ToArray();
