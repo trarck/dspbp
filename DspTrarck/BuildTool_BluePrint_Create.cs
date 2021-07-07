@@ -23,14 +23,6 @@ namespace DspTrarck
 
 		public int handItemBeforeExtraMode;
 
-		private int neighborId0;
-
-		private int neighborId1;
-
-		private int neighborId2;
-
-		private int neighborId3;
-
 		public bool castTerrain;
 
 		public bool castPlatform;
@@ -52,15 +44,23 @@ namespace DspTrarck
 		public Vector3 cursorTarget;
 
 		private HashSet<EntityData> m_SelectEntities;
+		//key:entity id
+		private Dictionary<EntityData, BoxGizmo> m_SelectEntitiesGizmo;
+		private List<EntityData> m_NeedRemoveGizmosKeys;
+
 
 		protected override void _OnInit()
 		{
 			m_SelectEntities = new HashSet<EntityData>();
+			m_SelectEntitiesGizmo = new Dictionary<EntityData, BoxGizmo>();
+			m_NeedRemoveGizmosKeys = new List<EntityData>();
 		}
 
 		protected override void _OnFree()
 		{
 			m_SelectEntities = null;
+			m_SelectEntitiesGizmo = null;
+			m_NeedRemoveGizmosKeys = null;
 		}
 
 		protected override void _OnOpen()
@@ -70,14 +70,13 @@ namespace DspTrarck
 		protected override void _OnClose()
 		{
 			m_SelectEntities.Clear();
-			//if (base.player.inhandItemId == 0)
-			//{
-			//	int num = ((base.controller.cmd.mode == 0) ? handItemBeforeExtraMode : 0);
-			//	base.player.SetHandItems(num, 0);
-			//	base.controller.cmd.refId = num;
-			//	base.controller.cmd.stage = 0;
-			//}
-			//handItemBeforeExtraMode = 0;
+			m_NeedRemoveGizmosKeys.Clear();
+
+			foreach (var iter in m_SelectEntitiesGizmo)
+			{
+				iter.Value.Close();
+			}
+			m_SelectEntitiesGizmo.Clear();
 		}
 
 		protected override void _OnTick(long time)
@@ -85,8 +84,8 @@ namespace DspTrarck
 			UpdateRaycast();
 			DeterminePreviews();
 			UpdateCollidersForCursor();
-			UpdatePreviewModels(base.actionBuild.model);
-			UpdateGizmos(base.actionBuild.model);
+			UpdatePreviewModels(actionBuild.model);
+			UpdateGizmos(actionBuild.model);
 			CreateAction();
 		}
 
@@ -260,8 +259,43 @@ namespace DspTrarck
 			}
 		}
 
-		public override void UpdatePreviewModels(BuildModel model)
+		public override void UpdateGizmos(BuildModel model)
 		{
+			base.UpdateGizmos(model);
+
+			//check add
+			foreach (var entityData in m_SelectEntities)
+			{
+				//belt and prebuild no gizmos
+				if (entityData.beltId == 0 || entityData.id <= 0)
+				{
+					continue;
+				}
+
+				BoxGizmo gizmo = null;
+				if (m_SelectEntitiesGizmo.TryGetValue(entityData, out gizmo))
+				{
+					gizmo = CreateEntityGizmo(entityData);
+					gizmo.Open();
+				}
+			}
+
+			//check removed
+			m_NeedRemoveGizmosKeys.Clear();
+			foreach (var iter in m_SelectEntitiesGizmo)
+			{
+				if (!m_SelectEntities.Contains(iter.Key))
+				{
+					iter.Value.Close();
+					m_NeedRemoveGizmosKeys.Add(iter.Key);
+				}
+			}
+
+			foreach (var k in m_NeedRemoveGizmosKeys)
+			{
+				m_SelectEntitiesGizmo.Remove(k);
+			}
+
 
 		}
 
@@ -305,12 +339,12 @@ namespace DspTrarck
 				}
 				else
 				{
-					base.actionBuild.Close();
+					actionBuild.Close();
 				}
 			}
 			else
 			{
-				base.controller.cmd.stage = 0;
+				controller.cmd.stage = 0;
 			}
 		}
 
@@ -397,5 +431,38 @@ namespace DspTrarck
 			return name;
 		}
 
+		private BoxGizmo CreateEntityGizmo(EntityData entityData)
+		{
+			if (entityData.id <= 0 || entityData.beltId != 0)
+			{
+				return null;
+			}
+
+			BoxGizmo gizmo = null;
+
+			ItemProto itemProto2 = LDB.items.Select(entityData.protoId);
+			Vector3 position = entityData.pos;
+			float num = itemProto2.prefabDesc.buildCollider.ext.magnitude * 0.7f;
+			if (entityData.inserterId == 0)
+			{
+				gizmo = BoxGizmo.Create(entityData.pos, entityData.rot, itemProto2.prefabDesc.selectCenter, itemProto2.prefabDesc.selectSize);
+			}
+			else
+			{
+				ColliderData colliderData2 = player.planetData.physics.GetColliderData(entityData.colliderId);
+				colliderData2.ext.x += 0.1f;
+				gizmo = BoxGizmo.Create(colliderData2.pos, colliderData2.q, Vector3.zero, colliderData2.ext * 2f);
+			}
+			gizmo.multiplier = 1f;
+			gizmo.alphaMultiplier = itemProto2.prefabDesc.selectAlpha;
+			gizmo.fadeInScale = 1.3f;
+			gizmo.fadeInTime = 0.05f;
+			gizmo.fadeInFalloff = 0.5f;
+			gizmo.fadeOutScale = 1.3f;
+			gizmo.fadeOutTime = 0.05f;
+			gizmo.fadeOutFalloff = 0.5f;
+			gizmo.color = Color.white;
+			return gizmo;
+		}
 	}
 }
