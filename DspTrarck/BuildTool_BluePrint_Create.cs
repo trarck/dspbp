@@ -65,10 +65,14 @@ namespace DspTrarck
 
 		protected override void _OnOpen()
 		{
+			Debug.Log("bp create open");
+			controller.cmd.stage = 1;
 		}
 
 		protected override void _OnClose()
 		{
+			Debug.Log("bp create close");
+
 			m_SelectEntities.Clear();
 			m_NeedRemoveGizmosKeys.Clear();
 
@@ -91,7 +95,7 @@ namespace DspTrarck
 
 		public override bool DetermineActive()
 		{
-			return base.controller.cmd.mode == -1;
+			return controller.cmd.type == ECommand.Build &&  TrarckPlugin.Instance.BPCreate;
 		}
 
 		public void UpdateRaycast()
@@ -212,11 +216,7 @@ namespace DspTrarck
 
 		public void DeterminePreviews()
 		{
-			if (!VFInput.onGUI)
-			{
-				UICursor.SetCursor(ECursor.Delete);
-			}
-			base.buildPreviews.Clear();
+			buildPreviews.Clear();
 			if (cursorType == 0)
 			{
 				if (castObjectId > 0)
@@ -257,6 +257,8 @@ namespace DspTrarck
 					}
 				}
 			}
+
+			//Debug.LogFormat("select {0}", m_SelectEntities.Count);
 		}
 
 		public override void UpdateGizmos(BuildModel model)
@@ -266,17 +268,19 @@ namespace DspTrarck
 			//check add
 			foreach (var entityData in m_SelectEntities)
 			{
+				//Debug.LogFormat("gizmos:{0}", entityData.id);
 				//belt and prebuild no gizmos
-				if (entityData.beltId == 0 || entityData.id <= 0)
+				if (entityData.id == 0 )		//		|| entityData.id <= 0
 				{
 					continue;
 				}
 
 				BoxGizmo gizmo = null;
-				if (m_SelectEntitiesGizmo.TryGetValue(entityData, out gizmo))
+				if (!m_SelectEntitiesGizmo.TryGetValue(entityData, out gizmo))
 				{
 					gizmo = CreateEntityGizmo(entityData);
 					gizmo.Open();
+					m_SelectEntitiesGizmo[entityData] = gizmo;
 				}
 			}
 
@@ -295,8 +299,6 @@ namespace DspTrarck
 			{
 				m_SelectEntitiesGizmo.Remove(k);
 			}
-
-
 		}
 
 		public override void NotifyBuilt(int preObjId, int postObjId)
@@ -350,32 +352,27 @@ namespace DspTrarck
 
 		public void CreateAction()
 		{
-			if (((VFInput._buildConfirm.onDown && cursorType == 0) || (VFInput._buildConfirm.pressing && cursorType == 1)) && m_SelectEntities.Count > 0)
+			if (VFInput._buildConfirm.onDown  && m_SelectEntities.Count > 0)
 			{
+				Debug.LogFormat("Create bp {0}", m_SelectEntities.Count);
 				if (GameMain.localPlanet != null)
 				{
 					//过滤
 					List<EntityData> filterEntities = FilterEntitis(m_SelectEntities);
-
+					Debug.LogFormat("Create bp after filter {0}", filterEntities.Count);
 					//排序 by entity id
-					List<EntityData> sortedEntities = new List<EntityData>();
-					foreach (EntityData entityData in filterEntities)
-					{
-						for (int i = 0; i < sortedEntities.Count; ++i)
-						{
-							if (entityData.id < sortedEntities[i].id)
-							{
-								sortedEntities.Insert(i, entityData);
-								break;
-							}
-						}
-						sortedEntities.Add(entityData);
-					}
-
+					filterEntities.Sort(SortEntityDataCompare);
+					List<EntityData> sortedEntities = filterEntities;
+					Debug.LogFormat("Create bp after sort {0}", sortedEntities.Count);
 					CreateBluePrint(sortedEntities);
 				}
 				m_SelectEntities.Clear();
 			}
+		}
+
+		private int SortEntityDataCompare(EntityData a, EntityData b)
+		{
+			return a.id - b.id;
 		}
 
 		private List<EntityData> FilterEntitis(IEnumerable<EntityData> entities)
@@ -433,7 +430,8 @@ namespace DspTrarck
 
 		private BoxGizmo CreateEntityGizmo(EntityData entityData)
 		{
-			if (entityData.id <= 0 || entityData.beltId != 0)
+			Debug.LogFormat("create gizmo {0}", entityData.id);
+			if (entityData.id <= 0)         //|| entityData.beltId != 0
 			{
 				return null;
 			}

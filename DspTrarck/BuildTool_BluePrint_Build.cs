@@ -78,7 +78,7 @@ namespace DspTrarck
 
 		protected override void _OnOpen()
 		{
-			YHDebug.Log("open bp tools");
+			YHDebug.Log("open bp build");
 			yaw = BuildingParameters.template.yaw;
 			buildPreviews.Clear();
 			TrarckPlugin.Instance.factoryBP.CreateBuildPreviews();
@@ -87,7 +87,7 @@ namespace DspTrarck
 
 		protected override void _OnClose()
 		{
-			YHDebug.Log("close bp tools");
+			YHDebug.Log("close bp build");
 			isDragging = false;
 			yaw = 0f;
 			gap = 0f;

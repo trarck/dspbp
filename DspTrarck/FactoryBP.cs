@@ -827,13 +827,13 @@ namespace DspTrarck
 			{
 				BPEntityData bpEntity = CreateBPEntity(entity);
 				data.entities.Add(bpEntity);
-				//Debug.Log(JsonUtility.ToJson(bpEntity));
+				Debug.Log(JsonUtility.ToJson(bpEntity));
 			}
 
 			//更新连接
 			UpdateEntitiesConnects(data);
 
-			YHDebug.LogFormat("entities count:{0}", data.entities.Count);
+			Debug.LogFormat("entities count:{0}", data.entities.Count);
 			UpdateBPDataGrid(data);
 			//Debug.LogFormat("coonect count:{0}", data.connects!=null?data.connects.Count:0);
 			//Debug.Log(JsonUtility.ToJson(data));
@@ -1169,7 +1169,7 @@ namespace DspTrarck
 		public void SaveBPDataBinary(BPData bpData)
 		{
 			string fileName = Path.Combine(bpDir, bpData.name+".bin");
-			YHDebug.LogFormat("dir:{0},file:{1}", bpDir, fileName);
+			YHDebug.LogFormat("dir:{0},file:{1},entities:{2}", bpDir, fileName,bpData.entities.Count);
 			BPDataWriter.WriteBPDataToFile(fileName, bpData);
 		}
 

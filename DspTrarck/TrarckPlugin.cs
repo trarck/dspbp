@@ -52,6 +52,18 @@ namespace DspTrarck
 			}
 		}
 
+		public bool BPCreate
+		{
+			get
+			{
+				return m_BPCreate;
+			}
+			set
+			{
+				m_BPCreate = value;
+			}
+		}
+
 		public FactoryBP factoryBP
 		{
 			get
@@ -139,14 +151,14 @@ namespace DspTrarck
 
 				if (m_CreateBluePrintKey.IsDown())
 				{
-					YHDebug.Log("On create bp Key down");
+					Debug.Log("On create bp Key down");
 					m_BPCreate = true;
 					m_BPBuild = false;
 				}
 
 				if (m_BuildEntitiesKey.IsDown())
 				{
-					YHDebug.Log("On build bp entities Key down");
+					Debug.Log("On build bp entities Key down");
 					//build
 					//CreateBuildPreviews(Input.mousePosition);
 					m_BPBuild = true;
@@ -193,6 +205,7 @@ namespace DspTrarck
 			YHDebug.Log("exit bp mode");
 			m_EnterFactoryBPMode = false;
 			m_BPBuild = false;
+			m_BPCreate = false;
 
 			m_FactoryBPUI.Clear();
 			m_FactoryBP.Clear();
