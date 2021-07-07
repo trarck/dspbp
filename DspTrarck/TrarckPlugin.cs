@@ -12,19 +12,20 @@ namespace DspTrarck
 	public class TrarckPlugin: BaseUnityPlugin
 	{
 		private YH.MyInput.CombineKey m_BPEnterKey = new YH.MyInput.CombineKey("BPEnter", true, KeyCode.LeftControl, KeyCode.RightControl, KeyCode.Z);
-		private YH.MyInput.CombineKey m_CopyEntitiesKey = new YH.MyInput.CombineKey("CopyEntities", true, KeyCode.J);
+		private YH.MyInput.CombineKey m_CreateBluePrintKey = new YH.MyInput.CombineKey("CopyEntities", true, KeyCode.J);
 		private YH.MyInput.CombineKey m_CopyEntitiesWithoutBeltKey = new YH.MyInput.CombineKey("CopyEntities", true, KeyCode.K);
 		private YH.MyInput.CombineKey m_BuildEntitiesKey = new YH.MyInput.CombineKey("BuildEntities", true, KeyCode.I);
 		private YH.MyInput.CombineKey m_BuildEntitiesWithoutBeltKey = new YH.MyInput.CombineKey("BuildEntities", true, KeyCode.O);
 		private YH.MyInput.CombineKey m_SaveBPKey = new YH.MyInput.CombineKey("SaveBP", true, KeyCode.LeftControl, KeyCode.RightControl, KeyCode.S);
 
 
-		private bool m_EnterFactoryBPMode;
+
 
 		private FactoryBP m_FactoryBP;
-		private MultiSelector m_MultiSelector;
 		private FactoryBPUI m_FactoryBPUI;
 
+		private bool m_EnterFactoryBPMode;
+		private bool m_BPCreate = false;
 		private bool m_BPBuild = false;
 
 		private static TrarckPlugin s_Instance = null;
@@ -89,13 +90,8 @@ namespace DspTrarck
 			m_FactoryBP = new FactoryBP();
 			m_FactoryBP.Init();
 
-
-			m_MultiSelector = new MultiSelector();
-			m_MultiSelector.Init(m_FactoryBP);
-
 			m_FactoryBPUI = new FactoryBPUI();
 			m_FactoryBPUI.Init(m_FactoryBP);
-
 
 			s_Instance = this;
 		}
@@ -109,7 +105,6 @@ namespace DspTrarck
 				&& GameMain.mainPlayer.controller != null
 				&& GameMain.mainPlayer.controller.cmd.type != ECommand.Build)
 				{
-
 					ExitBluePrintMode();
 					return;
 				}
@@ -118,7 +113,7 @@ namespace DspTrarck
 			//更新键盘事件
 			KeyManager.Instance.Update();
 
-			//是否开启蓝图
+			//进入蓝图模式或退出
 			if (m_BPEnterKey.IsDown())
 			{
 				if (m_EnterFactoryBPMode)
@@ -129,12 +124,6 @@ namespace DspTrarck
 				{
 					EnterBluePrintMode();
 				}
-			}
-
-			//如果不在蓝图建造中，更新多选
-			if (m_MultiSelector != null && !m_BPBuild)
-			{
-				m_MultiSelector.Update();
 			}
 
 			//蓝图功能
@@ -148,25 +137,20 @@ namespace DspTrarck
 					m_FactoryBP.player = GameMain.mainPlayer;
 				}
 
-				if (m_CopyEntitiesKey.IsDown())
+				if (m_CreateBluePrintKey.IsDown())
 				{
-					YHDebug.Log("On copy entities Key down");
-					//copy
-					CopyEntities();
-				}
-
-				if (m_CopyEntitiesWithoutBeltKey.IsDown())
-				{
-					YHDebug.Log("On copy entities without belt Key down");
-					CopyEntitiesWithoutBelt();
+					YHDebug.Log("On create bp Key down");
+					m_BPCreate = true;
+					m_BPBuild = false;
 				}
 
 				if (m_BuildEntitiesKey.IsDown())
 				{
 					YHDebug.Log("On build bp entities Key down");
 					//build
-					CreateBuildPreviews(Input.mousePosition);
+					//CreateBuildPreviews(Input.mousePosition);
 					m_BPBuild = true;
+					m_BPCreate = false;
 				}
 
 				if (m_SaveBPKey.IsDown())
@@ -195,11 +179,6 @@ namespace DspTrarck
 				{
 					m_FactoryBPUI.OnGUI();
 				}
-
-				if (m_MultiSelector != null)
-				{
-					m_MultiSelector.OnGUI();
-				}
 			}
 		}
 
@@ -207,10 +186,6 @@ namespace DspTrarck
 		{
 			YHDebug.Log("enter bp mode");
 			m_EnterFactoryBPMode = true;
-			if (m_MultiSelector != null)
-			{
-				m_MultiSelector.enableSelect = true;
-			}
 		}
 
 		private void ExitBluePrintMode()
@@ -219,71 +194,8 @@ namespace DspTrarck
 			m_EnterFactoryBPMode = false;
 			m_BPBuild = false;
 
-			m_MultiSelector.Clear();
 			m_FactoryBPUI.Clear();
 			m_FactoryBP.Clear();
-		}
-
-		private string CopyEntities(List<EntityData> entities,string bpName,bool noBelt)
-		{
-			if (entities != null && entities.Count > 0)
-			{
-				if (string.IsNullOrEmpty(bpName))
-				{
-					bpName = GetDefaultName();
-				}
-
-				//不要电线杆，会有碰撞问题
-				for (int i = entities.Count - 1; i >= 0; --i)
-				{
-					if (entities[i].powerNodeId != 0)
-					{
-						entities.RemoveAt(i);
-					}
-				}
-
-				if (noBelt)
-				{
-					//filter etities
-					for  (int i=entities.Count-1;i>=0;--i)
-					{
-						if (entities[i].beltId != 0)
-						{
-							entities.RemoveAt(i);
-						}
-					}
-				}
-
-				m_FactoryBP.CopyEntities(bpName, entities, BPData.PosType.Relative);
-
-				return bpName;
-			}
-			return null;
-		}
-
-		private void CopyEntities()
-		{
-			string name=CopyEntities(m_MultiSelector.selectEntities, m_FactoryBPUI.bpName, m_FactoryBPUI.isWithoutBelt);
-			if (string.IsNullOrEmpty(m_FactoryBPUI.bpName))
-			{
-				m_FactoryBPUI.bpName = name;
-			}
-		}
-
-		private void CopyEntitiesWithoutBelt()
-		{
-			string name = CopyEntities(m_MultiSelector.selectEntities, m_FactoryBPUI.bpName, true);
-			if (string.IsNullOrEmpty(m_FactoryBPUI.bpName))
-			{
-				m_FactoryBPUI.bpName = name;
-			}
-		}
-
-		private string GetDefaultName()
-		{
-			DateTime now = DateTime.Now;
-			string name = now.ToString("yyyy-MM-dd-HH-mm-ss");
-			return name;
 		}
 
 		private void SaveCurrentBPData()
@@ -293,12 +205,12 @@ namespace DspTrarck
 
 		private void CreateBuildPreviews(Vector3 mousePos)
 		{
-			m_FactoryBP.CreateBuildPreviews();
-			Vector3 groundPos = Vector3.zero;
-			if (m_FactoryBP.TryScreenPositionToGroundPosition(mousePos, ref groundPos))
-			{
-				m_FactoryBP.UpdateBuildPosition(groundPos);
-			}
+			//m_FactoryBP.CreateBuildPreviews();
+			//Vector3 groundPos = Vector3.zero;
+			//if (m_FactoryBP.TryScreenPositionToGroundPosition(mousePos, ref groundPos))
+			//{
+			//	m_FactoryBP.UpdateBuildPosition(groundPos);
+			//}
 		}
 
 		private void UpdateBuildPreviewsPosition(Vector3 mousePos)

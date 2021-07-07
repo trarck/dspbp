@@ -183,6 +183,7 @@ namespace DspTrarck
 
 		public void CreateBuildPreviews()
 		{
+
 			if (m_BuildPreviews == null)
 			{
 				m_BuildPreviews = new List<BuildPreview>();
