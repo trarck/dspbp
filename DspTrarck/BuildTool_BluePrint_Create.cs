@@ -217,12 +217,29 @@ namespace DspTrarck
 		public void DeterminePreviews()
 		{
 			buildPreviews.Clear();
+			if (Input.GetKeyDown(KeyCode.F1))
+			{
+				cursorType = 0;
+			}
+			if (Input.GetKeyDown(KeyCode.F2))
+			{
+				cursorType = 2;
+			}
+
 			if (cursorType == 0)
 			{
 				if (castObjectId > 0)
 				{
 					EntityData entityData = factory.GetEntityData(castObjectId);
-					m_SelectEntities.Add(entityData);
+					if (VFInput.alt)
+					{
+						m_SelectEntities.Remove(entityData);
+					}
+					else
+					{
+						m_SelectEntities.Add(entityData);
+					}
+
 				}
 			}
 			else if (cursorType == 1)
@@ -252,7 +269,14 @@ namespace DspTrarck
 						if (_overlappedIds[i] > 0)
 						{
 							EntityData entityData = factory.GetEntityData(_overlappedIds[i]);
-							m_SelectEntities.Add(entityData);
+							if (VFInput.alt)
+							{
+								m_SelectEntities.Remove(entityData);
+							}
+							else
+							{
+								m_SelectEntities.Add(entityData);
+							}
 						}
 					}
 				}
