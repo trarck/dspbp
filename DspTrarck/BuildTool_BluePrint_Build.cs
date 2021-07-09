@@ -2018,15 +2018,8 @@ namespace DspTrarck
 				VFInput.UseBuildKey();
 				VFInput.UseEscape();
 				VFInput.UseRtsCancel();
-				if (base.controller.cmd.stage == 0)
-				{
-					base.player.SetHandItems(0, 0);
-					_Close();
-				}
-				else
-				{
-					base.controller.cmd.stage = 0;
-				}
+				TrarckPlugin.Instance.isBPBuild = false;
+				_Close();
 			}
 		}
 

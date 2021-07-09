@@ -150,14 +150,14 @@ namespace DspTrarck
 			{
 				if (m_CreateBluePrintKey.IsDown())
 				{
-					Debug.Log("On create bp Key down");
+					YHDebug.Log("On create bp Key down");
 					m_BPCreate = true;
 					m_BPBuild = false;
 				}
 
 				if (m_BuildEntitiesKey.IsDown())
 				{
-					Debug.Log("On build bp entities Key down");
+					YHDebug.Log("On build bp entities Key down");
 					//build
 					//CreateBuildPreviews(Input.mousePosition);
 					m_BPBuild = true;
@@ -171,23 +171,23 @@ namespace DspTrarck
 					SaveCurrentBPData();
 				}
 
-				if (m_BPBuild)
-				{
-					//取消build
-					if (Input.GetMouseButtonDown(1) && (!Input.GetKey(KeyCode.LeftShift) && !Input.GetKey(KeyCode.RightShift)))
-					{
-						m_BPBuild = false;
-					}
-				}
+				//if (m_BPBuild)
+				//{
+				//	//取消build
+				//	if (Input.GetMouseButtonDown(1) && (!Input.GetKey(KeyCode.LeftShift) && !Input.GetKey(KeyCode.RightShift)))
+				//	{
+				//		m_BPBuild = false;
+				//	}
+				//}
 
-				if (m_BPCreate)
-				{
-					//取消create
-					if (Input.GetMouseButtonDown(1) && (!Input.GetKey(KeyCode.LeftShift) && !Input.GetKey(KeyCode.RightShift)))
-					{
-						m_BPCreate = false;
-					}
-				}
+				//if (m_BPCreate)
+				//{
+				//	//取消create
+				//	if (Input.GetMouseButtonDown(1) && (!Input.GetKey(KeyCode.LeftShift) && !Input.GetKey(KeyCode.RightShift)))
+				//	{
+				//		m_BPCreate = false;
+				//	}
+				//}
 			}
 		}
 		

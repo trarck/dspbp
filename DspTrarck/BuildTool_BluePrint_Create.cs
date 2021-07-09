@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using YH.Log;
 
 namespace DspTrarck
 {
@@ -65,13 +66,12 @@ namespace DspTrarck
 
 		protected override void _OnOpen()
 		{
-			Debug.Log("bp create open");
-			controller.cmd.stage = 1;
+			YHDebug.Log("bp create open");
 		}
 
 		protected override void _OnClose()
 		{
-			Debug.Log("bp create close");
+			YHDebug.Log("bp create close");
 
 			m_SelectEntities.Clear();
 			m_NeedRemoveGizmosKeys.Clear();
@@ -223,7 +223,7 @@ namespace DspTrarck
 			}
 			if (Input.GetKeyDown(KeyCode.F2))
 			{
-				cursorType = 2;
+				cursorType = 1;
 			}
 
 			if (cursorType == 0)
@@ -244,7 +244,7 @@ namespace DspTrarck
 			}
 			else if (cursorType == 1)
 			{
-				Vector4 zero = Vector4.zero;
+
 				if (VFInput._cursorPlusKey.onDown)
 				{
 					cursorSize++;
@@ -263,12 +263,21 @@ namespace DspTrarck
 				}
 				if (castGround)
 				{
+					Vector4 zero = actionBuild.planetAux.activeGrid.GratboxByCenterSize(castGroundPos, cursorSize);
 					GetOverlappedObjectsNonAlloc(castGroundPos, 1.5f * (float)cursorSize, 1.5f * (float)cursorSize, ignoreAltitude: true);
-					for (int i = 0; i < _overlappedCount; i++)
+					for (int i = 0; i < BuildTool._overlappedCount; i++)
 					{
-						if (_overlappedIds[i] > 0)
+						PrefabDesc prefabDesc2 = GetPrefabDesc(BuildTool._overlappedIds[i]);
+						Pose objectPose3 = GetObjectPose(BuildTool._overlappedIds[i]);
+						Pose pose = (prefabDesc2.isInserter ? GetObjectPose2(BuildTool._overlappedIds[i]) : objectPose3);
+						if ((showDemolishContainerQuery && prefabDesc2.isStation) || (!base.actionBuild.planetAux.activeGrid.IsPointInGratbox(objectPose3.position, zero) && (!filterInserter || !prefabDesc2.isInserter || !base.actionBuild.planetAux.activeGrid.IsPointInGratbox(pose.position, zero))) || ((!prefabDesc2.isInserter || !filterInserter) && (!prefabDesc2.isBelt || !filterBelt) && (prefabDesc2.isInserter || prefabDesc2.isBelt || !filterFacility)))
 						{
-							EntityData entityData = factory.GetEntityData(_overlappedIds[i]);
+							continue;
+						}
+
+						if (BuildTool._overlappedIds[i] > 0)
+						{
+							EntityData entityData = factory.GetEntityData(BuildTool._overlappedIds[i]);
 							if (VFInput.alt)
 							{
 								m_SelectEntities.Remove(entityData);
@@ -345,32 +354,17 @@ namespace DspTrarck
 
 		public override void EscLogic()
 		{
+			YH.Log.YHDebug.LogFormat("bp create esc logic {0}",controller.cmd.mode);
 			bool num = !VFInput._godModeMechaMove;
-			bool onDown = VFInput._buildModeKey.onDown;
-			bool flag = VFInput.rtsCancel.onDown || VFInput.escKey.onDown || VFInput.escape || onDown;
+			bool flag = VFInput.rtsCancel.onDown || VFInput.escKey.onDown || VFInput.escape || VFInput._buildModeKey.onDown;
 			bool flag2 = !VFInput.onGUI && VFInput.inScreen;
-			if (!(num && flag && flag2))
+			if (num && flag && flag2)
 			{
-				return;
-			}
-			VFInput.UseBuildKey();
-			VFInput.UseEscape();
-			VFInput.UseRtsCancel();
-			if (base.controller.cmd.stage == 0)
-			{
-				base.controller.cmd.mode = 0;
-				if (handItemBeforeExtraMode > 0 || onDown)
-				{
-					_Close();
-				}
-				else
-				{
-					actionBuild.Close();
-				}
-			}
-			else
-			{
-				controller.cmd.stage = 0;
+				VFInput.UseBuildKey();
+				VFInput.UseEscape();
+				VFInput.UseRtsCancel();
+				TrarckPlugin.Instance.isBPCreate = false;
+				_Close();
 			}
 		}
 

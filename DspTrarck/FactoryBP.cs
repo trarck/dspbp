@@ -827,13 +827,13 @@ namespace DspTrarck
 			{
 				BPEntityData bpEntity = CreateBPEntity(entity);
 				data.entities.Add(bpEntity);
-				Debug.Log(JsonUtility.ToJson(bpEntity));
+				YHDebug.Log(JsonUtility.ToJson(bpEntity));
 			}
 
 			//更新连接
 			UpdateEntitiesConnects(data);
 
-			Debug.LogFormat("entities count:{0}", data.entities.Count);
+			YHDebug.LogFormat("entities count:{0}", data.entities.Count);
 			UpdateBPDataGrid(data);
 			//Debug.LogFormat("coonect count:{0}", data.connects!=null?data.connects.Count:0);
 			//Debug.Log(JsonUtility.ToJson(data));
