@@ -285,6 +285,7 @@
     <Compile Include="BPDataReader.cs" />
     <Compile Include="BuildTool_BluePrint_Create.cs" />
     <Compile Include="BuildTool_BluePrint_Build.cs" />
+    <Compile Include="UIBuildingGrid_Patch.cs" />
     <Compile Include="PlayerAction_Build_Patch.cs" />
     <Compile Include="FactoryBP.cs" />
     <Compile Include="FactoryBPUI.cs" />

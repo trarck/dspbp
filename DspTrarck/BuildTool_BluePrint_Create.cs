@@ -95,7 +95,7 @@ namespace DspTrarck
 
 		public override bool DetermineActive()
 		{
-			return controller.cmd.type == ECommand.Build &&  TrarckPlugin.Instance.BPCreate;
+			return controller.cmd.type == ECommand.Build &&  TrarckPlugin.Instance.isBPCreate;
 		}
 
 		public void UpdateRaycast()

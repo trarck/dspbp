@@ -117,7 +117,7 @@ namespace DspTrarck
 
 		public override bool DetermineActive()
 		{
-			return controller.cmd.type == ECommand.Build && TrarckPlugin.Instance.BPBuild;
+			return controller.cmd.type == ECommand.Build && TrarckPlugin.Instance.isBPBuild;
 		}
 
 		public bool UpdateHandItem()

@@ -16,6 +16,8 @@ namespace DspTrarck
 
 			BuildTool_BluePrint_Create bpToolCreate = new BuildTool_BluePrint_Create();
 			tools.Insert(1, bpToolCreate);
+			TrarckPlugin.Instance.bluePrintCreateTool = bpToolCreate;
+
 			__instance.tools = tools.ToArray();
 		}
 
@@ -25,7 +27,7 @@ namespace DspTrarck
 			//Debug.LogFormat("PlayerAction_Build pre DetermineActive {0}", TrarckPlugin.Instance.BPBuild);
 			var runOriginal = true;
 
-			if (TrarckPlugin.Instance.BPBuild)
+			if (TrarckPlugin.Instance.isBluePrintMode)
 			{
 				runOriginal = false;
 				__result = true;

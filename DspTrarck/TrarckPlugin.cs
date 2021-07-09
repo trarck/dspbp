@@ -18,9 +18,6 @@ namespace DspTrarck
 		private YH.MyInput.CombineKey m_BuildEntitiesWithoutBeltKey = new YH.MyInput.CombineKey("BuildEntities", true, KeyCode.O);
 		private YH.MyInput.CombineKey m_SaveBPKey = new YH.MyInput.CombineKey("SaveBP", true, KeyCode.LeftControl, KeyCode.RightControl, KeyCode.S);
 
-
-
-
 		private FactoryBP m_FactoryBP;
 		private FactoryBPUI m_FactoryBPUI;
 
@@ -32,6 +29,7 @@ namespace DspTrarck
 		private Harmony m_Harmony;
 
 		public bool NeedResetBuildPreview = false;
+		public BuildTool_BluePrint_Create bluePrintCreateTool = null;
 
 		public static TrarckPlugin Instance
 		{
@@ -40,7 +38,15 @@ namespace DspTrarck
 			}
 		}
 		
-		public bool BPBuild
+		public bool isBluePrintMode
+		{
+			get
+			{
+				return m_EnterFactoryBPMode;
+			}
+		}
+
+		public bool isBPBuild
 		{
 			get
 			{
@@ -52,7 +58,7 @@ namespace DspTrarck
 			}
 		}
 
-		public bool BPCreate
+		public bool isBPCreate
 		{
 			get
 			{
@@ -86,6 +92,8 @@ namespace DspTrarck
 
 			m_Harmony.PatchAll(typeof(PlayerAction_Build_Patch));
 
+			m_Harmony.PatchAll(typeof(UIBuildingGrid_Patch));
+
 			//GameData gd = GameMain.data;
 
 			//Player p1 = GameMain.mainPlayer;
@@ -110,45 +118,36 @@ namespace DspTrarck
 
 		void Update()
 		{
-			if (m_EnterFactoryBPMode)
-			{
-				//如果不是build模式，什么都不做。
-				if (GameMain.mainPlayer != null
+			//进入蓝图模式或退出
+			if (GameMain.mainPlayer != null
 				&& GameMain.mainPlayer.controller != null
-				&& GameMain.mainPlayer.controller.cmd.type != ECommand.Build)
+				&& GameMain.mainPlayer.controller.cmd.type == ECommand.Build)
+			{
+				//更新键盘事件
+				KeyManager.Instance.Update();
+
+				if (m_BPEnterKey.IsDown())
 				{
-					ExitBluePrintMode();
-					return;
+					if (m_EnterFactoryBPMode)
+					{
+						ExitBluePrintMode();
+					}
+					else
+					{
+						EnterBluePrintMode();
+					}
 				}
 			}
-
-			//更新键盘事件
-			KeyManager.Instance.Update();
-
-			//进入蓝图模式或退出
-			if (m_BPEnterKey.IsDown())
+			else if (m_EnterFactoryBPMode)
 			{
-				if (m_EnterFactoryBPMode)
-				{
-					ExitBluePrintMode();
-				}
-				else
-				{
-					EnterBluePrintMode();
-				}
+				//退出蓝图模式
+				ExitBluePrintMode();
+				return;
 			}
 
 			//蓝图功能
 			if (m_EnterFactoryBPMode)
 			{
-				//check planet data
-				PlanetData planetData = GameMain.localPlanet;
-				if (planetData != null && planetData != m_FactoryBP.planetData)
-				{
-					m_FactoryBP.SetPlanetData(planetData);
-					m_FactoryBP.player = GameMain.mainPlayer;
-				}
-
 				if (m_CreateBluePrintKey.IsDown())
 				{
 					Debug.Log("On create bp Key down");
@@ -180,6 +179,15 @@ namespace DspTrarck
 						m_BPBuild = false;
 					}
 				}
+
+				if (m_BPCreate)
+				{
+					//取消create
+					if (Input.GetMouseButtonDown(1) && (!Input.GetKey(KeyCode.LeftShift) && !Input.GetKey(KeyCode.RightShift)))
+					{
+						m_BPCreate = false;
+					}
+				}
 			}
 		}
 		
@@ -198,6 +206,14 @@ namespace DspTrarck
 		{
 			YHDebug.Log("enter bp mode");
 			m_EnterFactoryBPMode = true;
+
+			//check planet data
+			PlanetData planetData = GameMain.localPlanet;
+			if (planetData != null && planetData != m_FactoryBP.planetData)
+			{
+				m_FactoryBP.SetPlanetData(planetData);
+				m_FactoryBP.player = GameMain.mainPlayer;
+			}
 		}
 
 		private void ExitBluePrintMode()
