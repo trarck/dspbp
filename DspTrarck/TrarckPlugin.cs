@@ -24,12 +24,14 @@ namespace DspTrarck
 		private bool m_EnterFactoryBPMode;
 		private bool m_BPCreate = false;
 		private bool m_BPBuild = false;
+		private bool m_AutoEnterBPMode = false;
 
 		private static TrarckPlugin s_Instance = null;
 		private Harmony m_Harmony;
 
 		public bool NeedResetBuildPreview = false;
 		public BuildTool_BluePrint_Create bluePrintCreateTool = null;
+
 
 		public static TrarckPlugin Instance
 		{
@@ -126,8 +128,9 @@ namespace DspTrarck
 				//更新键盘事件
 				KeyManager.Instance.Update();
 
-				if (m_BPEnterKey.IsDown())
+				if (m_BPEnterKey.IsDown() || m_AutoEnterBPMode)
 				{
+					m_AutoEnterBPMode = false;
 					if (m_EnterFactoryBPMode)
 					{
 						ExitBluePrintMode();
@@ -140,6 +143,7 @@ namespace DspTrarck
 			}
 			else if (m_EnterFactoryBPMode)
 			{
+				m_AutoEnterBPMode = true;
 				//退出蓝图模式
 				ExitBluePrintMode();
 				return;
@@ -223,7 +227,7 @@ namespace DspTrarck
 			m_BPBuild = false;
 			m_BPCreate = false;
 
-			m_FactoryBPUI.Clear();
+			//m_FactoryBPUI.Clear();
 			m_FactoryBP.Clear();
 		}
 

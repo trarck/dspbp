@@ -1358,6 +1358,11 @@ namespace DspTrarck
 				}
 				if (buildPreview.desc.isInserter && buildPreview.condition == EBuildCondition.Ok)
 				{
+					if ((buildPreview.inputObjId == 0 || buildPreview.input == null) && (buildPreview.outputObjId==0 || buildPreview.output==null))
+					{
+						continue;
+					}
+
 					bool flag5 = ObjectIsBelt(buildPreview.inputObjId) || (buildPreview.input != null && buildPreview.input.desc.isBelt);
 					bool flag6 = ObjectIsBelt(buildPreview.outputObjId) || (buildPreview.output != null && buildPreview.output.desc.isBelt);
 					Vector3 zero = Vector3.zero;

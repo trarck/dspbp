@@ -119,7 +119,7 @@ namespace DspTrarck
                 GUILayout.BeginHorizontal();
                 {
                     GUILayout.Label("Create");
-                    m_CopyAdd = GUILayout.Toggle(m_CopyAdd, "Add");
+                    //m_CopyAdd = GUILayout.Toggle(m_CopyAdd, "Add");
                     m_WithoutBelt = GUILayout.Toggle(m_WithoutBelt, "NoBeil");
                     m_WithoutPowerNode = GUILayout.Toggle(m_WithoutPowerNode, "NoPower");
                 }

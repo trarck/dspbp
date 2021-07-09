@@ -354,7 +354,7 @@ namespace DspTrarck
 
 		public override void EscLogic()
 		{
-			YH.Log.YHDebug.LogFormat("bp create esc logic {0}",controller.cmd.mode);
+			YHDebug.LogFormat("bp create esc logic {0}",controller.cmd.mode);
 			bool num = !VFInput._godModeMechaMove;
 			bool flag = VFInput.rtsCancel.onDown || VFInput.escKey.onDown || VFInput.escape || VFInput._buildModeKey.onDown;
 			bool flag2 = !VFInput.onGUI && VFInput.inScreen;
@@ -372,16 +372,16 @@ namespace DspTrarck
 		{
 			if (VFInput._buildConfirm.onDown  && m_SelectEntities.Count > 0)
 			{
-				Debug.LogFormat("Create bp {0}", m_SelectEntities.Count);
+				YHDebug.LogFormat("Create bp {0}", m_SelectEntities.Count);
 				if (GameMain.localPlanet != null)
 				{
 					//过滤
 					List<EntityData> filterEntities = FilterEntitis(m_SelectEntities);
-					Debug.LogFormat("Create bp after filter {0}", filterEntities.Count);
+					YHDebug.LogFormat("Create bp after filter {0}", filterEntities.Count);
 					//排序 by entity id
 					filterEntities.Sort(SortEntityDataCompare);
 					List<EntityData> sortedEntities = filterEntities;
-					Debug.LogFormat("Create bp after sort {0}", sortedEntities.Count);
+
 					CreateBluePrint(sortedEntities);
 				}
 				m_SelectEntities.Clear();
@@ -448,7 +448,7 @@ namespace DspTrarck
 
 		private BoxGizmo CreateEntityGizmo(EntityData entityData)
 		{
-			Debug.LogFormat("create gizmo {0}", entityData.id);
+			YHDebug.LogFormat("create gizmo {0}", entityData.id);
 			if (entityData.id <= 0)         //|| entityData.beltId != 0
 			{
 				return null;
