@@ -430,12 +430,8 @@ namespace DspTrarck
 
 		private void CreateBluePrint(List<EntityData> entities)
 		{
-			string bpName = TrarckPlugin.Instance.factoryBPUI.bpName;
-			if (string.IsNullOrEmpty(bpName))
-			{
-				bpName = GetDefaultName();
-				TrarckPlugin.Instance.factoryBPUI.bpName = bpName;
-			}
+			string bpName = GetDefaultName();
+			TrarckPlugin.Instance.factoryBPUI.bpName = bpName;
 			TrarckPlugin.Instance.factoryBP.CopyEntities(bpName, entities, BPData.PosType.Relative);
 		}
 

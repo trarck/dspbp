@@ -5,6 +5,18 @@ using UnityEngine;
 
 namespace DspTrarck
 {
+    public struct BluePrintFile
+    {
+        public string name;
+        public string filepath;
+
+        public BluePrintFile(string name, string filepath)
+        {
+            this.name = name;
+            this.filepath = filepath;
+        }
+    }
+
     public class FactoryBPUI
     {
         private Rect m_UINormalRect = new Rect(30, 160, 200, 300);
@@ -16,7 +28,7 @@ namespace DspTrarck
         private bool m_WithoutBelt;
         private bool m_WithoutPowerNode;
 
-        private List<string> m_BPFiles;
+        private List<BluePrintFile> m_BPFiles;
 
         private Vector2 m_BPFilesScrollPos;
 
@@ -157,10 +169,10 @@ namespace DspTrarck
                 for (int i = 0; i < m_BPFiles.Count; ++i)
                 {
                     GUILayout.BeginHorizontal();
-                    GUILayout.Label(m_BPFiles[i], labelStyle, GUILayout.MaxWidth(160));
+                    GUILayout.Label(m_BPFiles[i].name, labelStyle, GUILayout.MaxWidth(160));
                     if (GUILayout.Button("L"))
                     {
-                        LoadBPFile(m_BPFiles[i]);
+                        LoadBPFile(m_BPFiles[i].filepath);
                     }
                     GUILayout.EndHorizontal();
                 }
@@ -181,7 +193,9 @@ namespace DspTrarck
                 factoryBP.currentData.name = m_BPName;
             }
 
-            factoryBP.SaveBPData(factoryBP.currentData);
+            string filePath= factoryBP.SaveBPData(factoryBP.currentData);
+            string name = YH.FileSystem.Relative(filePath, factoryBP.bpDir);
+            m_BPFiles.Add(new BluePrintFile(name,filePath));
         }
 
         private void LoadBPFile(string bpFile)
@@ -194,7 +208,7 @@ namespace DspTrarck
         {
             if (m_BPFiles == null)
             {
-                m_BPFiles = new List<string>();
+                m_BPFiles = new List<BluePrintFile>();
             }
             else
             {
@@ -204,9 +218,8 @@ namespace DspTrarck
             string[] files = Directory.GetFiles(factoryBP.bpDir);
             foreach (var f in files)
             {
-                m_BPFiles.Add(Path.GetFileName(f));
+                m_BPFiles.Add(new BluePrintFile(YH.FileSystem.Relative(f,factoryBP.bpDir),f));
             }
-
         }
     }
 

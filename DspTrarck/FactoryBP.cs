@@ -1150,27 +1150,30 @@ namespace DspTrarck
 			return bpData;
 		}
 
-		public void SaveBPData(BPData bpData)
+		public string SaveBPData(BPData bpData)
 		{
 			if (bpData != null)
 			{
 				//SaveBPDataJson(bpData);
-				SaveBPDataBinary(bpData);
+				return SaveBPDataBinary(bpData);
 			}
+			return null;
 		}
 
-		public void SaveBPDataJson(BPData bpData)
+		public string SaveBPDataJson(BPData bpData)
 		{
-			string fileName = Path.Combine(bpDir, bpData.name+".json");
+			string filePath = Path.Combine(bpDir, bpData.name+".json");
 			string jsonStr = JsonUtility.ToJson(bpData); 
-			File.WriteAllText(fileName, jsonStr);
+			File.WriteAllText(filePath, jsonStr);
+			return filePath;
 		}
 
-		public void SaveBPDataBinary(BPData bpData)
+		public string SaveBPDataBinary(BPData bpData)
 		{
-			string fileName = Path.Combine(bpDir, bpData.name+".bin");
-			YHDebug.LogFormat("dir:{0},file:{1},entities:{2}", bpDir, fileName,bpData.entities.Count);
-			BPDataWriter.WriteBPDataToFile(fileName, bpData);
+			string filePath = Path.Combine(bpDir, bpData.name+".bin");
+			YHDebug.LogFormat("dir:{0},file:{1},entities:{2}", bpDir, filePath,bpData.entities.Count);
+			BPDataWriter.WriteBPDataToFile(filePath, bpData);
+			return filePath;
 		}
 
 		#endregion
