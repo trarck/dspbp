@@ -810,6 +810,10 @@ namespace DspTrarck
 									}
 								}
 							}
+							else
+							{
+								continue;
+							}
 							flag12 = true;
 							break;
 						}

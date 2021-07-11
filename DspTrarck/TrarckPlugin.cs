@@ -5,18 +5,24 @@ using HarmonyLib;
 using UnityEngine;
 using YH.MyInput;
 using YH.Log;
+using BepInEx.Configuration;
 
 namespace DspTrarck
 {
 	[BepInPlugin("com.trarck.dspplugin", "Trarck Plug-In", "1.0.0.0")]
 	public class TrarckPlugin: BaseUnityPlugin
 	{
-		private YH.MyInput.CombineKey m_BPEnterKey = new YH.MyInput.CombineKey("BPEnter", true, KeyCode.LeftControl, KeyCode.RightControl, KeyCode.Z);
-		private YH.MyInput.CombineKey m_CreateBluePrintKey = new YH.MyInput.CombineKey("CopyEntities", true, KeyCode.J);
-		private YH.MyInput.CombineKey m_CopyEntitiesWithoutBeltKey = new YH.MyInput.CombineKey("CopyEntities", true, KeyCode.K);
-		private YH.MyInput.CombineKey m_BuildEntitiesKey = new YH.MyInput.CombineKey("BuildEntities", true, KeyCode.I);
-		private YH.MyInput.CombineKey m_BuildEntitiesWithoutBeltKey = new YH.MyInput.CombineKey("BuildEntities", true, KeyCode.O);
-		private YH.MyInput.CombineKey m_SaveBPKey = new YH.MyInput.CombineKey("SaveBP", true, KeyCode.LeftControl, KeyCode.RightControl, KeyCode.S);
+		private ConfigEntry<string> m_BPEnterKeyConfig;
+		private ConfigEntry<string> m_CreateBluePrintKeyConfig;
+		private ConfigEntry<string> m_BuildBluePrintKeyConfig;
+		private ConfigEntry<string> m_SaveBPKeyConfig;
+
+		private YH.MyInput.CombineKey m_BPEnterKey = null;//new YH.MyInput.CombineKey("BPEnter", true, KeyCode.LeftControl, KeyCode.RightControl, KeyCode.Z);
+		private YH.MyInput.CombineKey m_CreateBluePrintKey = null;//new YH.MyInput.CombineKey("CopyEntities", true, KeyCode.J);
+		private YH.MyInput.CombineKey m_BuildBluePrintKey = null;//new YH.MyInput.CombineKey("BuildEntities", true, KeyCode.I);
+		private YH.MyInput.CombineKey m_SaveBPKey = null;// new YH.MyInput.CombineKey("SaveBP", true, KeyCode.LeftControl, KeyCode.RightControl, KeyCode.S);
+
+
 
 		private FactoryBP m_FactoryBP;
 		private FactoryBPUI m_FactoryBPUI;
@@ -96,6 +102,8 @@ namespace DspTrarck
 
 			m_Harmony.PatchAll(typeof(UIBuildingGrid_Patch));
 
+			InitInputKeys();
+
 			//GameData gd = GameMain.data;
 
 			//Player p1 = GameMain.mainPlayer;
@@ -114,6 +122,7 @@ namespace DspTrarck
 
 			m_FactoryBPUI = new FactoryBPUI();
 			m_FactoryBPUI.Init(m_FactoryBP);
+			m_FactoryBPUI.RefreshBPFiles();
 
 			s_Instance = this;
 		}
@@ -159,7 +168,7 @@ namespace DspTrarck
 					m_BPBuild = false;
 				}
 
-				if (m_BuildEntitiesKey.IsDown())
+				if (m_BuildBluePrintKey.IsDown())
 				{
 					YHDebug.Log("On build bp entities Key down");
 					//build
@@ -204,6 +213,35 @@ namespace DspTrarck
 					m_FactoryBPUI.OnGUI();
 				}
 			}
+		}
+
+
+		private List<KeyCode> GetKeyCodes(string str)
+		{
+			string[] codeStrs = str.Split(',');
+			List<KeyCode> keyCodes = new List<KeyCode>();
+			foreach (var codeStr in codeStrs)
+			{
+				KeyCode keyCode;
+				if (Enum.TryParse<KeyCode>(codeStr.Trim(), out keyCode))
+				{
+					keyCodes.Add(keyCode);
+				}
+			}
+			return keyCodes;
+		}
+
+		private void InitInputKeys()
+		{
+			m_BPEnterKeyConfig = Config.Bind("Keys", "EnterBP", "LeftControl,RightControl,Z", "Enter or Exit blue print mode");
+			m_CreateBluePrintKeyConfig = Config.Bind("Keys", "CreateBP", "J", "Enter create blue print mode");
+			m_BuildBluePrintKeyConfig = Config.Bind("Keys", "BuildBP", "I", "Enter build blue print mode");
+			m_SaveBPKeyConfig = Config.Bind("Keys", "SaveBP", "LeftControl,RightControl,S", "Save blue print to file");
+
+			m_BPEnterKey = new YH.MyInput.CombineKey("EnterBP", true, GetKeyCodes(m_BPEnterKeyConfig.Value).ToArray());
+			m_CreateBluePrintKey = new YH.MyInput.CombineKey("CreateBP", true, GetKeyCodes(m_CreateBluePrintKeyConfig.Value).ToArray());
+			m_BuildBluePrintKey = new YH.MyInput.CombineKey("BuildBP", true, GetKeyCodes(m_BuildBluePrintKeyConfig.Value).ToArray());
+			m_SaveBPKey = new YH.MyInput.CombineKey("SaveBP", true, GetKeyCodes(m_SaveBPKeyConfig.Value).ToArray());
 		}
 
 		private void EnterBluePrintMode()

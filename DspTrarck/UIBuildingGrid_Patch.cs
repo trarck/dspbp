@@ -27,7 +27,7 @@ namespace DspTrarck
 				if (planetGrid != null)
 				{
 					Vector4 value = Vector4.zero;
-					if (TrarckPlugin.Instance.bluePrintCreateTool.cursorType > 0 && TrarckPlugin.Instance.bluePrintCreateTool.castGround)
+					if (TrarckPlugin.Instance.isBPCreate && TrarckPlugin.Instance.bluePrintCreateTool.cursorType > 0 && TrarckPlugin.Instance.bluePrintCreateTool.castGround)
 					{
 						value = planetGrid.GratboxByCenterSize(TrarckPlugin.Instance.bluePrintCreateTool.castGroundPos, TrarckPlugin.Instance.bluePrintCreateTool.cursorSize);
 					}

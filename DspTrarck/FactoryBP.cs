@@ -277,7 +277,7 @@ namespace DspTrarck
 					}
 					else
 					{
-						//抓子会同时有input和output。
+						//抓子会同时有input和output。传送带和其他建筑的intout关系。
 						if (entitiesIdToBuildPreviewMap.TryGetValue(connect.fromObjId, out buildPreview))
 						{
 							if (entitiesIdToBuildPreviewMap.TryGetValue(connect.toObjId, out other))
@@ -617,15 +617,69 @@ namespace DspTrarck
 			}
 			else if (entity.splitterId > 0)
 			{
+				SplitterComponent[] splitterPool = m_PlanetFactory.cargoTraffic.splitterPool;
 				bpEntity.type = BPEntityType.Splitter;
+				int splitterId = entity.splitterId;
+				bpEntity.filterId = splitterPool[splitterId].outFilter;
+
+				bpEntity.paramCount = 4;
+				bpEntity.parameters = new int[bpEntity.paramCount];
+
+				if (splitterPool[splitterId].inPriority)
+				{
+					int input = splitterPool[splitterId].input0;
+					if (input == splitterPool[splitterId].beltA)
+					{
+						bpEntity.parameters[0] = 1;
+					}
+					else if (input == splitterPool[splitterId].beltB)
+					{
+						bpEntity.parameters[1] = 1;
+					}
+					else if (input == splitterPool[splitterId].beltC)
+					{
+						bpEntity.parameters[2] = 1;
+					}
+					else if (input == splitterPool[splitterId].beltD)
+					{
+						bpEntity.parameters[3] = 1;
+					}
+				}
+				if (splitterPool[splitterId].outPriority)
+				{
+					int output = splitterPool[splitterId].output0;
+					if (output == splitterPool[splitterId].beltA)
+					{
+						bpEntity.parameters[0] = 1;
+					}
+					else if (output == splitterPool[splitterId].beltB)
+					{
+						bpEntity.parameters[1] = 1;
+					}
+					else if (output == splitterPool[splitterId].beltC)
+					{
+						bpEntity.parameters[2] = 1;
+					}
+					else if (output == splitterPool[splitterId].beltD)
+					{
+						bpEntity.parameters[3] = 1;
+					}
+				}
 			}
 			else if (entity.storageId > 0)
 			{
 				bpEntity.type = BPEntityType.Storage;
+				bpEntity.paramCount = 1;
+				bpEntity.parameters = new int[1];
+				bpEntity.parameters[0] = m_PlanetFactory.factoryStorage.storagePool[entity.storageId].bans;
 			}
 			else if (entity.tankId > 0)
 			{
 				bpEntity.type = BPEntityType.Tank;
+				bpEntity.paramCount = 2;
+				bpEntity.parameters = new int[2];
+				bpEntity.parameters[0] = m_PlanetFactory.factoryStorage.tankPool[entity.tankId].outputSwitch ? 1 : -1;
+				bpEntity.parameters[1] = m_PlanetFactory.factoryStorage.tankPool[entity.tankId].inputSwitch ? 1 : -1;
 			}
 			else if (entity.minerId > 0)
 			{
@@ -643,16 +697,20 @@ namespace DspTrarck
 				bpEntity.type = BPEntityType.Inserter;
 				InserterComponent inserterComponent = m_PlanetFactory.factorySystem.inserterPool[entity.inserterId];
 				ItemProto itemProto = LDB.items.Select(entity.protoId);
-				bpEntity.paramCount = (int)((inserterComponent.stt - 0.499f) / itemProto.prefabDesc.inserterSTT);
 				bpEntity.filterId = inserterComponent.filter;
 				bpEntity.pos2 = inserterComponent.pos2;
 				bpEntity.rot2 = inserterComponent.rot2;
 				bpEntity.pickOffset = inserterComponent.pickOffset;
 				bpEntity.insertOffset = inserterComponent.insertOffset;
-				if (bpEntity.paramCount > 0)
+				bpEntity.paramCount = 1;
+				bpEntity.parameters = new int[bpEntity.paramCount];
+				int num2 = 200000;
+				if (itemProto != null)
 				{
-					bpEntity.parameters = new int[bpEntity.paramCount];
+					num2 = itemProto.prefabDesc.inserterSTT;
 				}
+				int num3 = (inserterComponent.stt + num2 / 4) / num2;
+				bpEntity.parameters[0] = num3;
 			}
 			else if (entity.assemblerId > 0)
 			{
@@ -669,16 +727,68 @@ namespace DspTrarck
 				bpEntity.type = BPEntityType.Lab;
 				LabComponent labComponent = m_PlanetFactory.factorySystem.labPool[entity.labId];
 				bpEntity.recipeId = labComponent.recipeId;
+				bpEntity.paramCount = 1;
+				bpEntity.parameters = new int[1];
+				if (labComponent.researchMode)
+				{
+					bpEntity.parameters[0] = 2;
+				}
+				else if (labComponent.recipeId > 0)
+				{
+					bpEntity.parameters[0] = 1;
+				}
 			}
 			else if (entity.stationId > 0)
 			{
 				bpEntity.type = BPEntityType.Station;
+				StationComponent stationComponent = m_PlanetFactory.transport.stationPool[entity.stationId];
+				if (stationComponent != null)
+				{
+					bpEntity.paramCount = 2048;
+					bpEntity.parameters = new int[2048];
+					int num4 = 0;
+					for (int i = 0; i < stationComponent.storage.Length; i++)
+					{
+						if (!stationComponent.isCollector)
+						{
+							bpEntity.parameters[num4 + i * 6] = stationComponent.storage[i].itemId;
+							bpEntity.parameters[num4 + i * 6 + 1] = (int)stationComponent.storage[i].localLogic;
+							bpEntity.parameters[num4 + i * 6 + 2] = (int)stationComponent.storage[i].remoteLogic;
+							bpEntity.parameters[num4 + i * 6 + 3] = stationComponent.storage[i].max;
+						}
+					}
+					num4 += 192;
+					for (int j = 0; j < stationComponent.slots.Length; j++)
+					{
+						if (!stationComponent.isCollector)
+						{
+							bpEntity.parameters[num4 + j * 4] = (int)stationComponent.slots[j].dir;
+							bpEntity.parameters[num4 + j * 4 + 1] = stationComponent.slots[j].storageIdx;
+						}
+					}
+					num4 += 128;
+					if (!stationComponent.isCollector)
+					{
+						bpEntity.parameters[num4] = (int)m_PlanetFactory.powerSystem.consumerPool[stationComponent.pcId].workEnergyPerTick;
+						bpEntity.parameters[num4 + 1] = _round2int(stationComponent.tripRangeDrones * 100000000.0);
+						bpEntity.parameters[num4 + 2] = _round2int(stationComponent.tripRangeShips / 100.0);
+						bpEntity.parameters[num4 + 3] = (stationComponent.includeOrbitCollector ? 1 : (-1));
+						bpEntity.parameters[num4 + 4] = _round2int(stationComponent.warpEnableDist);
+						bpEntity.parameters[num4 + 5] = (stationComponent.warperNecessary ? 1 : (-1));
+						bpEntity.parameters[num4 + 6] = stationComponent.deliveryDrones;
+						bpEntity.parameters[num4 + 7] = stationComponent.deliveryShips;
+					}
+					num4 += 64;
+				}
 			}
 			else if (entity.ejectorId > 0)
 			{
 				bpEntity.type = BPEntityType.Ejector;
 				EjectorComponent ejectorComponent = m_PlanetFactory.factorySystem.ejectorPool[entity.ejectorId];
 				bpEntity.recipeId = ejectorComponent.orbitId;
+				bpEntity.paramCount = 1;
+				bpEntity.parameters = new int[1];
+				bpEntity.parameters[0] = ejectorComponent.orbitId;
 			}
 			else if (entity.siloId > 0)
 			{
@@ -689,6 +799,9 @@ namespace DspTrarck
 				bpEntity.type = BPEntityType.PowerGen;
 				PowerGeneratorComponent powerGeneratorComponent = m_PlanetFactory.powerSystem.genPool[entity.powerGenId];
 				bpEntity.recipeId = powerGeneratorComponent.productId;
+				bpEntity.paramCount = 1;
+				bpEntity.parameters = new int[1];
+				bpEntity.parameters[0] = powerGeneratorComponent.productId;
 			}
 			else if (entity.powerConId > 0)
 			{
@@ -698,7 +811,10 @@ namespace DspTrarck
 			{
 				bpEntity.type = BPEntityType.PowerExchanger;
 				PowerExchangerComponent powerExchangerComponent = m_PlanetFactory.powerSystem.excPool[entity.powerExcId];
-				bpEntity.recipeId = (int)powerExchangerComponent.targetState;
+				bpEntity.recipeId = Mathf.RoundToInt(powerExchangerComponent.targetState);
+				bpEntity.paramCount = 1;
+				bpEntity.parameters = new int[1];
+				bpEntity.parameters[0] = Mathf.RoundToInt(powerExchangerComponent.targetState);
 			}
 			else if (entity.powerNodeId > 0)
 			{
@@ -853,7 +969,13 @@ namespace DspTrarck
 					bpData.connects.Clear();
 				}
 
-				//抓子的input和output
+				//建筑的connect情况。通过抓子和传送带连接。
+				//一个预置体只能保存一个输入一个输出。
+				//抓子:一个输入，一个输出。
+				//传送带：三个输入，一个输出
+				//其他建筑(物流塔，储液灌):输入、输出不固定。连接关系放入传送带。
+
+				//优先处理抓子的input和output。
 				foreach (var bpEntity in bpData.entities)
 				{
 					if (bpEntity.type != BPEntityType.Inserter)
@@ -863,14 +985,25 @@ namespace DspTrarck
 					CreateEntityBothConnect(bpEntity, ref bpData.connects);
 				}
 
+				//再处理传送带的输出关系
 				foreach (var bpEntity in bpData.entities)
 				{
-					//抓子已经处理过
-					if (bpEntity.type == BPEntityType.Inserter)
+					if (bpEntity.type != BPEntityType.Belt)
 					{
 						continue;
 					}
 					CreateEntityOutputConnect(bpEntity, ref bpData.connects);
+				}
+
+				//最后处理其他建筑和传送带的输入关系
+				//这是只剩下传送带和其他建筑的关系。传送带之间的关系，已经通过传送带之间的输出关系处理过了。
+				foreach (var bpEntity in bpData.entities)
+				{
+					if (bpEntity.type != BPEntityType.Belt)
+					{
+						continue;
+					}
+					CreateEntityInputConnect(bpEntity, ref bpData.connects);
 				}
 			}
 		}
@@ -896,8 +1029,10 @@ namespace DspTrarck
 					connect.isOutput = isOutput;
 
 					connect.offset = isOutput ? bpEntity.insertOffset : bpEntity.pickOffset;
-
-					connects.Add(connect);
+					if (!BPData.IsConnectExists(connect, connects))
+					{
+						connects.Add(connect);
+					}
 				}
 			}
 		}
@@ -917,6 +1052,39 @@ namespace DspTrarck
 				//如果有截断，则忽略连接。复制的时候没办法补齐另一方。
 				//这里只记录output.
 				if (otherObjId != 0 && isOutput)
+				{
+					ConnectData connect = new ConnectData();
+					connect.fromObjId = bpEntity.entityId;
+					connect.toObjId = otherObjId;
+					connect.fromSlot = i;
+					connect.toSlot = otherSlot;
+					connect.isOutput = isOutput;
+
+					connect.offset = bpEntity.insertOffset;
+
+					if (!BPData.IsConnectExists(connect, connects))
+					{
+						connects.Add(connect);
+					}
+				}
+			}
+		}
+
+		public void CreateEntityInputConnect(BPEntityData bpEntity, ref List<ConnectData> connects)
+		{
+			bool isOutput;
+			int otherObjId;
+			int otherSlot;
+
+			for (int i = 0; i < 16; ++i)
+			{
+				m_PlanetFactory.ReadObjectConn(bpEntity.entityId, i, out isOutput, out otherObjId, out otherSlot);
+				YHDebug.LogFormat("output connect:{0},{1},{2},{3},{4},{5},{6}", bpEntity.entityId, i, isOutput, otherObjId, otherSlot, bpEntity.pickOffset, bpEntity.insertOffset);
+
+				//连接是相互的,只记录一种连接。
+				//如果有截断，则忽略连接。复制的时候没办法补齐另一方。
+				//这里只记录input.
+				if (otherObjId != 0 && !isOutput)
 				{
 					ConnectData connect = new ConnectData();
 					connect.fromObjId = bpEntity.entityId;
@@ -1172,6 +1340,11 @@ namespace DspTrarck
 		{
 			string filePath = Path.Combine(bpDir, bpData.name+".bin");
 			YHDebug.LogFormat("dir:{0},file:{1},entities:{2}", bpDir, filePath,bpData.entities.Count);
+			string fileDir = Path.GetDirectoryName(filePath);
+			if (!Directory.Exists(fileDir))
+			{
+				Directory.CreateDirectory(fileDir);
+			}
 			BPDataWriter.WriteBPDataToFile(filePath, bpData);
 			return filePath;
 		}
@@ -1269,6 +1442,15 @@ namespace DspTrarck
 			}
 
 			return overlappedCount;
+		}
+
+		private int _round2int(double d)
+		{
+			if (!(d > 0.0))
+			{
+				return (int)(d - 0.5);
+			}
+			return (int)(d + 0.5);
 		}
 	}
 }

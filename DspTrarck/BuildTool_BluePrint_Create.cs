@@ -270,7 +270,7 @@ namespace DspTrarck
 						PrefabDesc prefabDesc2 = GetPrefabDesc(BuildTool._overlappedIds[i]);
 						Pose objectPose3 = GetObjectPose(BuildTool._overlappedIds[i]);
 						Pose pose = (prefabDesc2.isInserter ? GetObjectPose2(BuildTool._overlappedIds[i]) : objectPose3);
-						if ((showDemolishContainerQuery && prefabDesc2.isStation) || (!base.actionBuild.planetAux.activeGrid.IsPointInGratbox(objectPose3.position, zero) && (!filterInserter || !prefabDesc2.isInserter || !base.actionBuild.planetAux.activeGrid.IsPointInGratbox(pose.position, zero))) || ((!prefabDesc2.isInserter || !filterInserter) && (!prefabDesc2.isBelt || !filterBelt) && (prefabDesc2.isInserter || prefabDesc2.isBelt || !filterFacility)))
+						if ((!base.actionBuild.planetAux.activeGrid.IsPointInGratbox(objectPose3.position, zero) && (!filterInserter || !prefabDesc2.isInserter || !base.actionBuild.planetAux.activeGrid.IsPointInGratbox(pose.position, zero))) || ((!prefabDesc2.isInserter || !filterInserter) && (!prefabDesc2.isBelt || !filterBelt) && (prefabDesc2.isInserter || prefabDesc2.isBelt || !filterFacility)))
 						{
 							continue;
 						}
