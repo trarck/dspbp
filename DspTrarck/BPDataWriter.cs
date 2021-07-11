@@ -97,7 +97,8 @@ namespace DspTrarck
 
 			writer.Write(bpData.latitude);
 			writer.Write(bpData.longitude);
-			BinaryHelper.WriteBoundsInt(writer, ref bpData.gridBounds);
+			BinaryHelper.WriteVector2(writer, ref bpData.gcsMin);
+			BinaryHelper.WriteVector2(writer, ref bpData.gcsMax);
 			BinaryHelper.WriteVector3(writer, ref bpData.originalPos);
 			writer.Write(bpData.planetRadius);
 		}

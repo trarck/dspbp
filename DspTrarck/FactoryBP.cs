@@ -938,6 +938,7 @@ namespace DspTrarck
 			BPData data = new BPData();
 			data.name = name;
 			data.posType = posType;
+			data.planetRadius = planetData.realRadius;
 
 			foreach (var entity in entities)
 			{
@@ -973,6 +974,7 @@ namespace DspTrarck
 				//一个预置体只能保存一个输入一个输出。
 				//抓子:一个输入，一个输出。
 				//传送带：三个输入，一个输出
+				//堆叠建筑:一个输入，一个输出。
 				//其他建筑(物流塔，储液灌):输入、输出不固定。连接关系放入传送带。
 
 				//优先处理抓子的input和output。
@@ -995,7 +997,7 @@ namespace DspTrarck
 					CreateEntityOutputConnect(bpEntity, ref bpData.connects);
 				}
 
-				//最后处理其他建筑和传送带的输入关系
+				//再处理其他建筑和传送带的输入关系
 				//这是只剩下传送带和其他建筑的关系。传送带之间的关系，已经通过传送带之间的输出关系处理过了。
 				foreach (var bpEntity in bpData.entities)
 				{
@@ -1003,6 +1005,23 @@ namespace DspTrarck
 					{
 						continue;
 					}
+					CreateEntityInputConnect(bpEntity, ref bpData.connects);
+				}
+				//再处理堆叠建筑的输入关系
+				foreach (var bpEntity in bpData.entities)
+				{
+					ItemProto itemProto = LDB.items.Select(bpEntity.protoId);
+					if (!itemProto.prefabDesc.multiLevel)
+					{
+						continue;
+					}
+					//var dict = MultiSelector.SerializeObject(bpEntity);
+					//string s = "";
+					//foreach (var it in dict)
+					//{
+					//	s += it.Key + "=" + it.Value + ",";
+					//}
+					//Debug.LogFormat("堆叠物品:{0}",s);
 					CreateEntityInputConnect(bpEntity, ref bpData.connects);
 				}
 			}

@@ -165,7 +165,7 @@ namespace DspTrarck
 		public Vector2 gcsMax;
 
 		//x:longitude index,y:latitude index ,z:0
-		public BoundsInt gridBounds;
+		//public BoundsInt gridBounds;
 
 
 		//保存时的原点位置。

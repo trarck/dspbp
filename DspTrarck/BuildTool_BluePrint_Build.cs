@@ -1293,7 +1293,7 @@ namespace DspTrarck
 						}
 					}
 				}
-				if ((!buildPreview.desc.multiLevel || buildPreview.inputObjId == 0) && !buildPreview.desc.isInserter)
+				if ((!buildPreview.desc.multiLevel || (buildPreview.inputObjId == 0 && buildPreview.input==null)) && !buildPreview.desc.isInserter)
 				{
 					RaycastHit hitInfo;
 					for (int num49 = 0; num49 < buildPreview.desc.landPoints.Length; num49++)

@@ -85,7 +85,8 @@ namespace DspTrarck
 
 			bpData.latitude = reader.ReadSingle();
 			bpData.longitude = reader.ReadSingle();
-			bpData.gridBounds = BinaryHelper.ReadBoundsInt(reader);
+			BinaryHelper.TryReadVector2(reader, ref bpData.gcsMin);
+			BinaryHelper.TryReadVector2(reader, ref bpData.gcsMax);
 			BinaryHelper.TryReadVector3(reader, ref bpData.originalPos);
 			bpData.planetRadius = reader.ReadSingle();
 		}
