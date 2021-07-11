@@ -96,7 +96,7 @@ namespace DspTrarck
 		//copy时游戏内实体id
 		public int entityId;
 
-		public short protoId;
+		public int protoId;
 
 		public BPEntityType type;
 

@@ -22,7 +22,7 @@ namespace DspTrarck
 		private YH.MyInput.CombineKey m_BuildBluePrintKey = null;//new YH.MyInput.CombineKey("BuildEntities", true, KeyCode.I);
 		private YH.MyInput.CombineKey m_SaveBPKey = null;// new YH.MyInput.CombineKey("SaveBP", true, KeyCode.LeftControl, KeyCode.RightControl, KeyCode.S);
 
-
+		private YH.MyInput.CombineKey m_ExportLapJointKey = new YH.MyInput.CombineKey("ExportLapJoint", true, KeyCode.LeftAlt, KeyCode.K);
 
 		private FactoryBP m_FactoryBP;
 		private FactoryBPUI m_FactoryBPUI;
@@ -184,6 +184,11 @@ namespace DspTrarck
 					SaveCurrentBPData();
 				}
 
+				if (m_ExportLapJointKey.IsDown())
+				{
+					ExportModelLapJot();
+				}
+
 				//if (m_BPBuild)
 				//{
 				//	//取消build
@@ -256,6 +261,61 @@ namespace DspTrarck
 				m_FactoryBP.SetPlanetData(planetData);
 				m_FactoryBP.player = GameMain.mainPlayer;
 			}
+		}
+
+		[Serializable]
+		public class LapJointNode
+		{
+			public int protoId;
+			public Vector3 lapJoint;
+		}
+		[Serializable]
+		public class LapJointAsset
+		{
+			public List<LapJointNode> lapJoints;
+		}
+
+		private void ExportModelLapJot()
+		{
+			LapJointAsset lapJointAsset = new LapJointAsset();
+			lapJointAsset.lapJoints = new List<LapJointNode>();
+			foreach (ItemProto itemProto in LDB.items.dataArray)
+			{
+				PrefabDesc prefabDesc = FactoryBP.GetPrefabDesc(itemProto);
+				if (prefabDesc!=null)
+				{
+					//Debug.LogFormat("{0},{1}", itemProto.ID, prefabDesc.lapJoint);
+					LapJointNode node = new LapJointNode()
+					{
+						protoId=itemProto.ID,
+						lapJoint=prefabDesc.lapJoint
+					};
+					lapJointAsset.lapJoints.Add(node);
+				}
+			}
+
+			//System.Text.StringBuilder sb = new System.Text.StringBuilder();
+			//sb.Append("{\n");
+			//sb.Append("\"lapJoints\":[\n");
+			//foreach (var node in lapJointAsset.lapJoints)
+			//{
+			//	sb.Append("{");
+			//	sb.Append("\"protoId\":").Append(node.protoId).Append(",\n");
+			//	sb.Append("\"lapJoint\":")
+			//		   .Append("{");
+			//				sb.Append("\"x\":").Append(node.lapJoint.x).Append(",");
+			//				sb.Append("\"y\":").Append(node.lapJoint.y).Append(",");
+			//				sb.Append("\"z\":").Append(node.lapJoint.z);
+			//			sb.Append("}").Append("\n");
+			//	sb.Append("},\n");
+			//}
+			//sb.Append("]\n");
+			//sb.Append("}");
+			//string jsonStr = sb.toString();
+
+			string jsonStr = JsonUtility.ToJson(lapJointAsset);
+			string outFile = System.IO.Path.Combine(Environment.CurrentDirectory, "BepInEx/config", "latJoint.json");
+			System.IO.File.WriteAllText(outFile, jsonStr);
 		}
 
 		private void ExitBluePrintMode()

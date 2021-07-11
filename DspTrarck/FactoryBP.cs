@@ -873,7 +873,7 @@ namespace DspTrarck
 			return buildPreview;
 		}
 
-		public PrefabDesc GetPrefabDesc(ItemProto item)
+		public static PrefabDesc GetPrefabDesc(ItemProto item)
 		{
 			PrefabDesc prefabDesc = null;
 
@@ -910,7 +910,7 @@ namespace DspTrarck
 		{
 			PrebuildData prebuildData = new PrebuildData();
 
-			prebuildData.protoId = bpEntity.protoId;
+			prebuildData.protoId =(short) bpEntity.protoId;
 			prebuildData.pos = bpEntity.pos;
 			prebuildData.rot = bpEntity.rot;
 			prebuildData.pos2 = bpEntity.pos2;

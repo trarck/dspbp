@@ -31,7 +31,7 @@ namespace DspTrarck
 		public static void ReadBPEntityData(BinaryReader reader, ref BPEntityData bpEntityData)
 		{
 			bpEntityData.entityId = reader.ReadInt32();
-			bpEntityData.protoId = reader.ReadInt16();
+			bpEntityData.protoId = reader.ReadInt32();
 			bpEntityData.type = (BPEntityType)reader.ReadByte();
 			BinaryHelper.TryReadVector3(reader, ref bpEntityData.pos);
 			BinaryHelper.TryReadQuaternion(reader, ref bpEntityData.rot);
