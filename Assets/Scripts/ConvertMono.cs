@@ -22,6 +22,9 @@ public class LapJointAsset
 
 public class ConvertMono : MonoBehaviour
 {
+    public const float PI = (float)Math.PI;
+    public const float DoublePI = (float)(Math.PI * 2.0f);
+
     [SerializeField]
     InputField m_BPFileInput;
 
@@ -42,7 +45,7 @@ public class ConvertMono : MonoBehaviour
     // Update is called once per frame
     void LoadLapJoints()
     {
-        string latJointFile = System.IO.Path.Combine(Application.persistentDataPath, "latJoint.json");
+        string latJointFile = System.IO.Path.Combine(Application.streamingAssetsPath, "latJoint.json");
         string cnt = File.ReadAllText(latJointFile);
         LapJointAsset lapJointAsset = JsonUtility.FromJson<LapJointAsset>(cnt);
         if (lapJointAsset != null)
@@ -52,7 +55,9 @@ public class ConvertMono : MonoBehaviour
                 m_ProtoLapJoints[node.protoId] = node.lapJoint;
             }
         }
+        Debug.LogFormat("LapJoints count:{0}", m_ProtoLapJoints.Count);
     }
+
 
     public void DoConvert()
     {
@@ -63,6 +68,18 @@ public class ConvertMono : MonoBehaviour
             return;
         }
 
+#if UNITY_EDITOR
+        string saveDir = Path.Combine(Application.dataPath, "../bp");
+#else
+           string saveDir = Path.Combine(Application.dataPath, "bp");
+#endif
+        if (!Directory.Exists(saveDir))
+        {
+            Directory.CreateDirectory(saveDir);
+        }
+
+
+
         //dataFile = string.IsNullOrEmpty(bpStringFile) ? "D:\\csharp\\ConvertMBData\\ConvertMBData\\t.txt" : dataFile;// args[1];
         string dataContext = File.ReadAllText(bpStringFile);
         BlueprintData data = BlueprintData.Import(dataContext);
@@ -71,6 +88,15 @@ public class ConvertMono : MonoBehaviour
             ShowMessage("BlueprintData import error");
             return;
         }
+
+        if (m_ProtoLapJoints.Count == 0)
+        {
+            LoadLapJoints();
+        }
+
+        string dataJson = BlueprintData.GetJsonPrety(dataContext);
+        string jsonFile = Path.Combine(saveDir, Path.GetFileNameWithoutExtension(bpStringFile) + ".json");
+        File.WriteAllText(jsonFile, dataJson);
 
         int segmentCount = 200;
         foreach (var build in data.copiedBuildings)
@@ -99,15 +125,16 @@ public class ConvertMono : MonoBehaviour
         //连接
         SetBPConnects(bpData, data, planetRadius, entityIdToBeltMap);
 
-        //保存
-        string saveDir = Path.Combine(Application.dataPath, "bp");
-        if (!Directory.Exists(saveDir))
-        {
-            Directory.CreateDirectory(saveDir);
-        }
+        //归一化
+        UpdateBPDataGrid(bpData);
 
+        //保存
         string bpFile = Path.Combine(saveDir, bpData.name);
         BPDataWriter.WriteBPDataToFile(bpFile, bpData);
+
+        string bpJsonFile = Path.Combine(saveDir, Path.GetFileNameWithoutExtension(bpData.name)+".json");
+        string bpJson = JsonUtility.ToJson(bpData,true);
+        File.WriteAllText(bpJsonFile, bpJson);
     }
 
 
@@ -125,8 +152,8 @@ public class ConvertMono : MonoBehaviour
 
         if (string.IsNullOrEmpty(bpData.name))
         {
-            bpData.name = GetDefaultName();
-            m_BPFileInput.text = bpData.name;
+            bpData.name = GetDefaultName()+".bin";
+            m_BPNameInput.text = bpData.name;
         }
 
         bpData.posType = BPData.PosType.Relative;
@@ -144,6 +171,216 @@ public class ConvertMono : MonoBehaviour
         return name;
     }
 
+    public void UpdateBPDataGrid(BPData data)
+    {
+        if (data.posType == BPData.PosType.Relative)
+        {
+            //统一化坐标。只有使用相对坐标才能统一化坐标
+            NormalizeBPData(data);
+        }
+    }
+
+    /// <summary>
+    /// 设置原点。其他entity都是相对原点位置。
+    /// 原点目前使用最小经纬度。后面可以考虑指定。
+    /// </summary>
+    /// <param name="data"></param>
+    public void NormalizeBPData(BPData data)
+    {
+        Vector3 gcs;
+
+        float latMin = float.MaxValue, latMax = float.MinValue;
+        float negativeLongMin = float.MaxValue, negativeLongMax = float.MinValue;
+        float positiveLongMin = float.MaxValue, positiveLongMax = float.MinValue;
+
+        float latGridMin = float.MaxValue, latGridMax = float.MinValue;
+        //计算经纬度包围盒
+        for (int i = 0; i < data.entities.Count; ++i)
+        {
+            BPEntityData entityData = data.entities[i];
+            gcs = m_PlanetCoordinate.LocalToGcs(entityData.pos);
+            latMin = Math.Min(latMin, gcs.y);
+            latMax = Math.Max(latMax, gcs.y);
+
+            latGridMin = Math.Min(latGridMin, entityData.grid.y);
+            latGridMax = Math.Max(latGridMax, entityData.grid.y);
+
+            if (gcs.x < 0)
+            {
+                negativeLongMin = Math.Min(negativeLongMin, gcs.x);
+                negativeLongMax = Math.Max(negativeLongMax, gcs.x);
+            }
+            else
+            {
+                positiveLongMin = Math.Min(positiveLongMin, gcs.x);
+                positiveLongMax = Math.Max(positiveLongMax, gcs.x);
+            }
+        }
+
+        Debug.LogFormat("lat:{0},{1}", latGridMin, latGridMax);
+
+        float longMin = 0, longMax = 0;
+        float negativeAdd = 0;
+        bool needFixNegativeLong = false;
+
+        if (negativeLongMin == float.MaxValue && negativeLongMax == float.MinValue)
+        {
+            //只在正边
+            longMin = positiveLongMin;
+            longMax = positiveLongMax;
+        }
+        else if (positiveLongMin == float.MaxValue && positiveLongMax == float.MinValue)
+        {
+            //只在负边
+            longMin = negativeLongMin;
+            longMax = negativeLongMax;
+        }
+        else
+        {
+            //pMin   pMax   nMIn   nMax
+            //nMIn nMax  pMin  pMax
+
+            //跨越
+            //pMax -> nMin
+            float maxDistance = 2 * Mathf.PI + negativeLongMin - positiveLongMax;
+            //nMax->pMin
+            float minDistance = positiveLongMin - negativeLongMax;
+
+            if (minDistance <= maxDistance)
+            {
+                longMin = negativeLongMin;
+                longMax = positiveLongMax;
+            }
+            else
+            {
+                longMin = positiveLongMin;
+                longMax = negativeLongMax + 2 * Mathf.PI;
+
+                needFixNegativeLong = true;
+                negativeAdd = 2 * Mathf.PI;
+            }
+        }
+
+        //Debug.LogFormat("rect:{0},{1},{2},{3}", positiveLongMin, positiveLongMax, negativeLongMin, negativeLongMax);
+       // Debug.LogFormat("long:{0},{1}", longMin, longMax);
+
+        NormalizeEntities(data, new Vector3(longMin, latMin), latGridMin);
+        //Debug.LogFormat("Bounds:{0}", data.gridBounds);
+        //记录经维度
+        data.longitude = longMin;
+        data.latitude = latMin;
+
+        //记录原位置
+        Vector3 normalPos = m_PlanetCoordinate.GcsToNormal(data.longitude, data.latitude);
+        data.originalPos = m_PlanetCoordinate.NormalToGround(normalPos);
+    }
+    private void NormalizeEntities(BPData data, Vector3 originalGcs, float originalLatGrid)
+    {
+        Vector3 gcs;
+
+        for (int i = 0; i < data.entities.Count; ++i)
+        {
+            BPEntityData entityData = data.entities[i];
+            gcs = m_PlanetCoordinate.LocalToGcs(entityData.pos);
+            //偏移经度
+            gcs.x = DeltaRadian(originalGcs.x, gcs.x);
+            //这里要保证维度是原来的维度。
+            //这里的经度已经是偏移的。转换成grid后，就是偏移的grid。
+            Vector2 gridOffset = m_PlanetCoordinate.GcsToGrid(gcs);
+            //Debug.LogFormat("e:{0},{1},{2}", gcs.x, gcs.y, gridOffset);
+            //偏移维度
+            gridOffset.y -= originalLatGrid;
+            entityData.grid = gridOffset;
+
+            if (entityData.type != BPEntityType.Inserter)
+            {
+                //rotation
+                Quaternion rot = SphericalRotation(entityData.pos, 0);
+                // Debug.LogFormat("rot:{0},{1},{2},{3}", rot.x, rot.y, rot.z, rot.w);
+                //Debug.LogFormat("erot:{0},{1},{2},{3}", entityData.rot.x, entityData.rot.y, entityData.rot.z, entityData.rot.w);
+
+                Quaternion rotInverse = Quaternion.Inverse(rot);
+                entityData.rot = rotInverse * entityData.rot;
+            }
+
+            //只有爪子有第二个位置
+            if (entityData.type == BPEntityType.Inserter)
+            {
+                gcs = m_PlanetCoordinate.LocalToGcs(entityData.pos2);
+                //偏移经度
+                gcs.x = DeltaRadian(originalGcs.x, gcs.x);
+                //这里要保证维度是原来的维度。
+                //这里的经度已经是偏移的。转换成grid后，就是偏移的grid。
+                gridOffset = m_PlanetCoordinate.GcsToGrid(gcs);
+                //Debug.LogFormat("e2:{0},{1},{2}", gcs.x, gcs.y, gridOffset);
+                //偏移维度
+                gridOffset.y -= originalLatGrid;
+                entityData.grid2 = gridOffset;
+
+                //rotation
+                //rot = SphericalRotation(entityData.pos2, 0);
+                ////Debug.LogFormat("rot2:{0},{1},{2},{3}", rot.x, rot.y, rot.z, rot.w);
+                ////Debug.LogFormat("erot2:{0},{1},{2},{3}", entityData.rot2.x, entityData.rot2.y, entityData.rot2.z, entityData.rot2.w);
+                //rotInverse = Quaternion.Inverse(rot);
+                //entityData.rot2 = rotInverse * entityData.rot2;
+            }
+        }
+    }
+
+    public static float Repeat(float t, float length)
+    {
+        return Clamp(t - Floor(t / length) * length, 0f, length);
+    }
+
+    public static float Floor(float f)
+    {
+        return (float)Math.Floor(f);
+    }
+
+    public static float Clamp(float value, float min, float max)
+    {
+        if (value < min)
+        {
+            value = min;
+        }
+        else if (value > max)
+        {
+            value = max;
+        }
+        return value;
+    }
+
+    public static float DeltaRadian(float current, float target)
+    {
+        var delta = Repeat(target - current, DoublePI);
+        if (delta > PI)
+        {
+            delta -= DoublePI;
+        }
+        return delta;
+    }
+
+    public static Quaternion SphericalRotation(Vector3 pos, float angle)
+    {
+        pos.Normalize();
+        Vector3 normalized = Vector3.Cross(pos, Vector3.up).normalized;
+        Vector3 forward;
+        if (normalized.sqrMagnitude < 0.0001f)
+        {
+            float num = Mathf.Sign(pos.y);
+            normalized = Vector3.right * num;
+            forward = Vector3.forward * num;
+        }
+        else
+        {
+            forward = Vector3.Cross(normalized, pos).normalized;
+        }
+        if (angle == 0f)
+        {
+            return Quaternion.LookRotation(forward, pos);
+        }
+        return Quaternion.LookRotation(forward, pos) * Quaternion.AngleAxis(angle, Vector3.up);
+    }
     #region Building
 
     private void SetBPEnitiies(BPData bpData, BlueprintData blueprintData, float planetRadius, ref Dictionary<int, BeltCopy> entityIdToBeltMap)
@@ -180,6 +417,7 @@ public class ConvertMono : MonoBehaviour
                 SetMultiLevelData(entiyData, building);
             }
 
+            SetEntityGcsGrid(entiyData);
             bpData.entities.Add(entiyData);
         }
 
@@ -200,6 +438,7 @@ public class ConvertMono : MonoBehaviour
             entiyData.insertOffset = inserter.insertOffset;
             entiyData.filterId = inserter.filterId;
 
+            SetEntityGcsGrid(entiyData);
             bpData.entities.Add(entiyData);
         }
 
@@ -215,7 +454,9 @@ public class ConvertMono : MonoBehaviour
             entiyData.rot = Quaternion.identity;
             entiyData.offsetGround = belt.altitude;
 
+            SetEntityGcsGrid(entiyData);
             entityIdToBeltMap[belt.originalId] = belt;
+            bpData.entities.Add(entiyData);
         }
     }
 
@@ -289,6 +530,19 @@ public class ConvertMono : MonoBehaviour
             entityData.offsetGround = building.altitude * lapJoint.y;
         }
     }
+
+    private void SetEntityGcsGrid(BPEntityData entityData)
+    {
+        //直角坐标转换成格子坐标。保留原坐标，比对作用。
+        entityData.grid = m_PlanetCoordinate.LocalToGrid(entityData.pos);
+
+        if (entityData.type == BPEntityType.Inserter)
+        {
+            entityData.offsetGround = Mathf.Max(0, entityData.pos.magnitude - m_PlanetCoordinate.radius - 0.2f);
+            entityData.grid2 = m_PlanetCoordinate.LocalToGrid(entityData.pos2);
+            entityData.offsetGround2 = Mathf.Max(0, entityData.pos2.magnitude - m_PlanetCoordinate.radius - 0.2f);
+        }
+    }
     #endregion //Building
 
     #region Connect
@@ -345,8 +599,8 @@ public class ConvertMono : MonoBehaviour
                 outputConn.fromSlot = 0;
                 outputConn.isOutput = true;
                 outputConn.toSlot = -1;
-                var outBelt = entityIdToBeltMap[belt.outputId];
-                if (outBelt != null)
+                BeltCopy outBelt;
+                if (entityIdToBeltMap.TryGetValue(belt.outputId, out outBelt))
                 {
                     if (outBelt.backInputId == belt.originalId)
                     {
@@ -360,6 +614,10 @@ public class ConvertMono : MonoBehaviour
                     {
                         outputConn.toSlot = 3;
                     }
+                }
+                else
+                {
+                    Debug.LogFormat("Can't find output id:{0}", belt.outputId);
                 }
                 bpData.connects.Add(outputConn);
             }

@@ -1,8 +1,4 @@
-{
-"lapJoints":[
-{"protoId":5001,
-"lapJoint":{"x":0,"y":0,"z":0}
-},
+{"lapJoints":[{"protoId":5001,"lapJoint":{"x":0,"y":0,"z":0}},
 {"protoId":5002,
 "lapJoint":{"x":0,"y":0,"z":0}
 },
@@ -131,6 +127,6 @@
 },
 {"protoId":2901,
 "lapJoint":{"x":0,"y":4,"z":0}
-},
+}
 ]
 }

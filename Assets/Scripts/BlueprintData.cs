@@ -339,6 +339,12 @@ namespace MultiBuild
             return unzipped;
         }
 
+        public static string GetJsonPrety(string input)
+        {
+            fsData data = GetJsonData(input);
+            return fsJsonPrinter.PrettyJson(data);
+        }
+
         public static fsData GetJsonData(string input)
         {
             string unzipped = GetJson(input);
