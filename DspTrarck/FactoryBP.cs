@@ -230,7 +230,7 @@ namespace DspTrarck
 					entitiesIdToBuildPreviewMap[entityData.entityId] = buildPreview;
 				}
 
-				//Debug.LogFormat("map count:{0}", entitiesIdToBuildPreviewMap.Count);
+				//YHDebug.LogFormat("map count:{0}", entitiesIdToBuildPreviewMap.Count);
 
 				//处理连接。连接保存的是entity id之间的联系
 				ConnectBuildPreviews(data.connects, entitiesIdToBuildPreviewMap);
@@ -422,7 +422,7 @@ namespace DspTrarck
 				{
 					buildGrid = m_PlanetCoordinate.GcsToGrid(gcs);
 				}
-				//Debug.LogFormat("UpdatePos:pos:({0},{1},{2}),gcs:({3},{4}),grid:({5},{6})", pos.x, pos.y, pos.z, gcs.x, gcs.y,buildGrid.x,buildGrid.y);
+				//YHDebug.LogFormat("UpdatePos:pos:({0},{1},{2}),gcs:({3},{4}),grid:({5},{6})", pos.x, pos.y, pos.z, gcs.x, gcs.y,buildGrid.x,buildGrid.y);
 				for (int i = 0; i < m_BuildPreviews.Count; ++i)
 				{
 					BPEntityData entityData = m_CurrentEntities[i];
@@ -599,7 +599,7 @@ namespace DspTrarck
 		{
 			//直角坐标转换成格子坐标。保留原坐标，比对作用。
 			bpEntity.grid = m_PlanetCoordinate.LocalToGrid(bpEntity.pos);
-			//Debug.LogFormat("height:{0},{1},{2}", bpEntity.pos.magnitude, planetData.radius,bpEntity.pos.magnitude-planetData.radius);
+			//YHDebug.LogFormat("height:{0},{1},{2}", bpEntity.pos.magnitude, planetData.radius,bpEntity.pos.magnitude-planetData.radius);
 			bpEntity.offsetGround = Mathf.Max(0, bpEntity.pos.magnitude - planetData.radius-0.2f);
 
 			if (bpEntity.type == BPEntityType.Inserter)
@@ -944,16 +944,20 @@ namespace DspTrarck
 			{
 				BPEntityData bpEntity = CreateBPEntity(entity);
 				data.entities.Add(bpEntity);
-				YHDebug.Log(JsonUtility.ToJson(bpEntity));
+				//YHDebug.Log(JsonUtility.ToJson(bpEntity));
 			}
 
 			//更新连接
 			UpdateEntitiesConnects(data);
+			//foreach (var connect in data.connects)
+			//{
+			//	YHDebug.LogFormat("{0},{1},{2},{3},{4},{5}", connect.fromObjId, connect.fromSlot, connect.isOutput, connect.toObjId, connect.toSlot, connect.offset);
+			//}
 
 			YHDebug.LogFormat("entities count:{0}", data.entities.Count);
 			UpdateBPDataGrid(data);
-			//Debug.LogFormat("coonect count:{0}", data.connects!=null?data.connects.Count:0);
-			//Debug.Log(JsonUtility.ToJson(data));
+			//YHDebug.LogFormat("coonect count:{0}", data.connects!=null?data.connects.Count:0);
+			//YHDebug.Log(JsonUtility.ToJson(data));
 			return data;
 		}
 
@@ -1021,7 +1025,7 @@ namespace DspTrarck
 					//{
 					//	s += it.Key + "=" + it.Value + ",";
 					//}
-					//Debug.LogFormat("堆叠物品:{0}",s);
+					//YHDebug.LogFormat("堆叠物品:{0}",s);
 					CreateEntityInputConnect(bpEntity, ref bpData.connects);
 				}
 			}
@@ -1216,7 +1220,7 @@ namespace DspTrarck
 			YHDebug.LogFormat("long:{0},{1}", longMin, longMax);
 
 			NormalizeEntities(data, new Vector3(longMin, latMin), latGridMin);
-			//Debug.LogFormat("Bounds:{0}", data.gridBounds);
+			//YHDebug.LogFormat("Bounds:{0}", data.gridBounds);
 			//记录经维度
 			data.longitude = longMin;
 			data.latitude = latMin;

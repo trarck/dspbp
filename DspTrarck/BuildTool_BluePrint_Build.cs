@@ -809,6 +809,10 @@ namespace DspTrarck
 										}
 									}
 								}
+								else
+								{
+									continue;
+								}
 							}
 							else
 							{
@@ -837,68 +841,68 @@ namespace DspTrarck
 						continue;
 					}
 
-					bool flag14 = false;
-					bool flag15 = false;
-					Vector3 vector114 = Vector3.zero;
-					Vector3 vector115 = Vector3.zero;
-					BuildPreview input = buildPreview.input;
-					BuildPreview output = buildPreview.output;
-					if (input != null)
-					{
-						flag14 = true;
-						vector114 = buildPreview.input.lpos;
-					}
+					//bool flag14 = false;
+					//bool flag15 = false;
+					//Vector3 vector114 = Vector3.zero;
+					//Vector3 vector115 = Vector3.zero;
+					//BuildPreview input = buildPreview.input;
+					//BuildPreview output = buildPreview.output;
+					//if (input != null)
+					//{
+					//	flag14 = true;
+					//	vector114 = buildPreview.input.lpos;
+					//}
 
-					if (output != null)
-					{
-						flag15 = true;
-						vector115 = buildPreview.output.lpos;
-					}
+					//if (output != null)
+					//{
+					//	flag15 = true;
+					//	vector115 = buildPreview.output.lpos;
+					//}
 
-					float num11 = (float)Math.PI;
-					if (flag14 && flag15)
-					{
-						num11 = Maths.SphericalAngleAOBInRAD(buildPreview.lpos, vector114, vector115);
-						if (num11 < 0.87266463f)
-						{
-							buildPreview.condition = EBuildCondition.TooBend;
-							continue;
-						}
-					}
-					float num12 = 0f;
-					if (flag15)
-					{
-						num12 = Mathf.Abs(Maths.SphericalSlopeRatio(buildPreview.lpos, vector115));
-						if (num12 > 0.75f)
-						{
-							buildPreview.condition = EBuildCondition.TooSteep;
-							continue;
-						}
+					//float num11 = (float)Math.PI;
+					//if (flag14 && flag15)
+					//{
+					//	num11 = Maths.SphericalAngleAOBInRAD(buildPreview.lpos, vector114, vector115);
+					//	if (num11 < 0.87266463f)
+					//	{
+					//		buildPreview.condition = EBuildCondition.TooBend;
+					//		continue;
+					//	}
+					//}
+					//float num12 = 0f;
+					//if (flag15)
+					//{
+					//	num12 = Mathf.Abs(Maths.SphericalSlopeRatio(buildPreview.lpos, vector115));
+					//	if (num12 > 0.75f)
+					//	{
+					//		buildPreview.condition = EBuildCondition.TooSteep;
+					//		continue;
+					//	}
 
-						Vector3 vector6 = vector115 - buildPreview.lpos;
-						Vector3 normalized = buildPreview.lpos.normalized;
-						_ = vector6 - Vector3.Dot(vector6, normalized) * normalized;
-						if ((buildPreview.lpos - vector115).magnitude < 0.4f)
-						{
-							buildPreview.condition = EBuildCondition.TooClose;
-							continue;
-						}
-					}
-					if (flag14)
-					{
-						num12 = Mathf.Max(Mathf.Abs(Maths.SphericalSlopeRatio(vector114, buildPreview.lpos)), num12);
-						if (num12 > 0.75f)
-						{
-							buildPreview.condition = EBuildCondition.TooSteep;
-							continue;
-						}
-					}
+					//	Vector3 vector6 = vector115 - buildPreview.lpos;
+					//	Vector3 normalized = buildPreview.lpos.normalized;
+					//	_ = vector6 - Vector3.Dot(vector6, normalized) * normalized;
+					//	if ((buildPreview.lpos - vector115).magnitude < 0.4f)
+					//	{
+					//		buildPreview.condition = EBuildCondition.TooClose;
+					//		continue;
+					//	}
+					//}
+					//if (flag14)
+					//{
+					//	num12 = Mathf.Max(Mathf.Abs(Maths.SphericalSlopeRatio(vector114, buildPreview.lpos)), num12);
+					//	if (num12 > 0.75f)
+					//	{
+					//		buildPreview.condition = EBuildCondition.TooSteep;
+					//		continue;
+					//	}
+					//}
 
-					if (num11 < 2.5f && num12 > 0.1f)
-					{
-						buildPreview.condition = EBuildCondition.TooBendToLift;
-						continue;
-					}
+					//if (num11 < 2.5f && num12 > 0.1f)
+					//{
+					//	buildPreview.condition = EBuildCondition.TooBendToLift;
+					//	continue;
+					//}
 
 					continue;
 				}
@@ -1479,6 +1483,76 @@ namespace DspTrarck
 			{
 				if (buildPreview.desc.isBelt)
 				{
+					if (buildPreview.genNearColliderArea2 < 0.001f)
+					{
+						//parse cover
+						GetOverlappedObjectsNonAlloc(buildPreview.lpos, 0.3f, 3f, false);
+						int overlappedCount = BuildTool._overlappedCount;
+						YHDebug.LogFormat("CreatePrebuilds_Prefix:belt over {0}", overlappedCount);
+						if (overlappedCount > 0)
+						{
+							int objId = BuildTool._overlappedIds[0];
+							bool isBelt = FactoryHelper.ObjectIsBelt(player.factory, objId);
+							if (isBelt)
+							{
+								buildPreview.coverObjId = objId;
+								buildPreview.willRemoveCover = false;
+
+								TrarckPlugin.Instance.NeedResetBuildPreview = true;
+							}
+						}
+					}
+				}
+				else if (buildPreview.desc.isInserter)
+				{
+					//parse cover
+					if (buildPreview.input == null)
+					{
+						GetOverlappedObjectsNonAlloc(buildPreview.lpos, 0.3f, 3f, false);
+						int overlappedCount = BuildTool._overlappedCount;
+						YHDebug.LogFormat("CreatePrebuilds_Prefix:insert input over {0}", overlappedCount);
+						if (overlappedCount > 0)
+						{
+							int objId = BuildTool._overlappedIds[0];
+							bool isBelt = FactoryHelper.ObjectIsBelt(player.factory, objId);
+							if (isBelt)
+							{
+								buildPreview.inputObjId = objId;
+								buildPreview.inputToSlot = 1;
+								buildPreview.inputFromSlot = -1;
+								buildPreview.inputOffset = 0;
+
+								TrarckPlugin.Instance.NeedResetBuildPreview = true;
+							}
+						}
+					}
+
+					if (buildPreview.output == null)
+					{
+						GetOverlappedObjectsNonAlloc(buildPreview.lpos2, 0.3f, 3f, false);
+						int overlappedCount = BuildTool._overlappedCount;
+						YHDebug.LogFormat("CreatePrebuilds_Prefix:insert output over {0}", overlappedCount);
+						if (overlappedCount > 0)
+						{
+							int objId = BuildTool._overlappedIds[0];
+							bool isBelt = FactoryHelper.ObjectIsBelt(player.factory, objId);
+							if (isBelt)
+							{
+								buildPreview.outputObjId = objId;
+								buildPreview.outputFromSlot = 0;
+								buildPreview.outputToSlot = -1;
+								buildPreview.outputOffset = 0;
+								TrarckPlugin.Instance.NeedResetBuildPreview = true;
+							}
+						}
+					}
+				}
+			}
+
+			foreach (BuildPreview buildPreview in base.buildPreviews)
+			{
+				if (buildPreview.desc.isBelt)
+				{
 					if (buildPreview.isConnNode)
 					{
 						buildPreview.lrot = Maths.SphericalRotation(buildPreview.lpos, 0f);
@@ -1498,26 +1572,6 @@ namespace DspTrarck
 					for (int i = 0; i < buildPreview.paramCount; i++)
 					{
 						prebuild.parameters[i] = buildPreview.parameters[i];
-					}
-
-					if (buildPreview.genNearColliderArea2 < 0.001f)
-					{
-						//parse cover
-						GetOverlappedObjectsNonAlloc(buildPreview.lpos, 0.3f, 3f, false);
-						int overlappedCount = BuildTool._overlappedCount;
-						YHDebug.LogFormat("CreatePrebuilds_Prefix:belt over {0}", overlappedCount);
-						if (overlappedCount > 0)
-						{
-							int objId = BuildTool._overlappedIds[0];
-							bool isBelt = FactoryHelper.ObjectIsBelt(player.factory, objId);
-							if (isBelt)
-							{
-								buildPreview.coverObjId = objId;
-								buildPreview.willRemoveCover = false;
-
-								TrarckPlugin.Instance.NeedResetBuildPreview = true;
-							}
-						}
 					}
 					flag = true;
 					if (buildPreview.coverObjId == 0 || buildPreview.willRemoveCover)
@@ -1618,52 +1672,6 @@ namespace DspTrarck
 				}
 				else
 				{
-					if (buildPreview.desc.isInserter)
-					{
-						//parse cover
-						if (buildPreview.input == null)
-						{
-							GetOverlappedObjectsNonAlloc(buildPreview.lpos, 0.3f, 3f, false);
-							int overlappedCount = BuildTool._overlappedCount;
-							YHDebug.LogFormat("CreatePrebuilds_Prefix:insert input over {0}", overlappedCount);
-							if (overlappedCount > 0)
-							{
-								int objId = BuildTool._overlappedIds[0];
-								bool isBelt = FactoryHelper.ObjectIsBelt(player.factory, objId);
-								if (isBelt)
-								{
-									buildPreview.inputObjId = objId;
-									buildPreview.inputToSlot = 1;
-									buildPreview.inputFromSlot = -1;
-									buildPreview.inputOffset = 0;
-
-									TrarckPlugin.Instance.NeedResetBuildPreview = true;
-								}
-							}
-						}
-
-						if (buildPreview.output == null)
-						{
-							GetOverlappedObjectsNonAlloc(buildPreview.lpos2, 0.3f, 3f, false);
-							int overlappedCount = BuildTool._overlappedCount;
-							YHDebug.LogFormat("CreatePrebuilds_Prefix:insert output over {0}", overlappedCount);
-							if (overlappedCount > 0)
-							{
-								int objId = BuildTool._overlappedIds[0];
-								bool isBelt = FactoryHelper.ObjectIsBelt(player.factory, objId);
-								if (isBelt)
-								{
-									buildPreview.outputObjId = objId;
-									buildPreview.outputFromSlot = 0;
-									buildPreview.outputToSlot = -1;
-									buildPreview.outputOffset = 0;
-									TrarckPlugin.Instance.NeedResetBuildPreview = true;
-								}
-							}
-						}
-					}
-
-
 					if (buildPreview.condition == EBuildCondition.Ok && buildPreview.coverObjId == 0)
 					{
 						if (buildPreview.isConnNode)
