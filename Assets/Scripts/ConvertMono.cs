@@ -26,6 +26,9 @@ public class ConvertMono : MonoBehaviour
     public const float DoublePI = (float)(Math.PI * 2.0f);
 
     [SerializeField]
+    InputField m_BPSaveDirInput;
+
+    [SerializeField]
     InputField m_BPFileInput;
 
     [SerializeField]
@@ -130,7 +133,7 @@ public class ConvertMono : MonoBehaviour
 
         BPData bpData = new BPData();
         //基础信息
-        SetBPBaseData(bpData, data, planetRadius);
+        SetBPBaseData(bpData, data, planetRadius,Path.GetFileNameWithoutExtension(bpStringFile));
 
         //entities
         Dictionary<int, BPEntityData> entityIdToBPEntities = new Dictionary<int, BPEntityData>();
@@ -144,16 +147,20 @@ public class ConvertMono : MonoBehaviour
         UpdateBPDataGrid(bpData);
 
         //保存
-        string saveDir = GetSaveDir();
+        string saveDir = m_BPSaveDirInput.text;
+        if (string.IsNullOrEmpty(saveDir))
+        {
+            saveDir = GetSaveDir();
+        }
         string bpFile = Path.Combine(saveDir, bpData.name);
         BPDataWriter.WriteBPDataToFile(bpFile, bpData);
 
-        string bpJsonFile = Path.Combine(saveDir, Path.GetFileNameWithoutExtension(bpData.name)+".json");
-        string bpJson = JsonUtility.ToJson(bpData,true);
-        File.WriteAllText(bpJsonFile, bpJson);
+        //string bpJsonFile = Path.Combine(saveDir, Path.GetFileNameWithoutExtension(bpData.name)+".json");
+        //string bpJson = JsonUtility.ToJson(bpData,true);
+        //File.WriteAllText(bpJsonFile, bpJson);
     }
 
-	private void SetBPBaseData(BPData bpData, BlueprintData blueprintData,float planetRadius)
+	private void SetBPBaseData(BPData bpData, BlueprintData blueprintData,float planetRadius,string defaultName)
     {
         bpData.version = 1;
         if (!string.IsNullOrEmpty(m_BPNameInput.text))
@@ -167,8 +174,7 @@ public class ConvertMono : MonoBehaviour
 
         if (string.IsNullOrEmpty(bpData.name))
         {
-            bpData.name = GetDefaultName()+".bin";
-            m_BPNameInput.text = bpData.name;
+            bpData.name = defaultName + ".bin";
         }
 
         bpData.posType = BPData.PosType.Relative;
