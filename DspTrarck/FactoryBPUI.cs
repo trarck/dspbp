@@ -28,6 +28,8 @@ namespace DspTrarck
         private bool m_WithoutBelt;
         private bool m_WithoutPowerNode;
 
+        private bool m_ShowConnectNode = false;
+
         private List<BluePrintFile> m_BPFiles;
 
         private Vector2 m_BPFilesScrollPos;
@@ -69,6 +71,8 @@ namespace DspTrarck
         public bool isWithoutBelt => m_WithoutBelt;
 
         public bool isWithoutPowerNode => m_WithoutPowerNode;
+        public bool isShowConnectNode => m_ShowConnectNode;
+
         public void Init(FactoryBP fbp)
         {
             factoryBP = fbp;
@@ -141,15 +145,24 @@ namespace DspTrarck
 
                 GUILayout.Space(5);
 
-                //copy
+                //create
                 GUILayout.BeginHorizontal();
                 {
                     GUILayout.Label("Create");
                     //m_CopyAdd = GUILayout.Toggle(m_CopyAdd, "Add");
-                    m_WithoutBelt = GUILayout.Toggle(m_WithoutBelt, "NoBeil");
+                    m_WithoutBelt = GUILayout.Toggle(m_WithoutBelt, "NoBelt");
                     m_WithoutPowerNode = GUILayout.Toggle(m_WithoutPowerNode, "NoPower");
                 }
                 GUILayout.EndHorizontal();
+
+                //build
+                GUILayout.BeginHorizontal();
+                {
+                    GUILayout.Label("show");
+                    m_ShowConnectNode = GUILayout.Toggle(m_ShowConnectNode, "Conn");
+                }
+                GUILayout.EndHorizontal();
+
 
                 //action
                 GUILayout.BeginHorizontal();
@@ -296,6 +309,15 @@ namespace DspTrarck
 
             string filePath= factoryBP.SaveBPData(factoryBP.currentData);
             string name = YH.FileSystem.Relative(factoryBP.bpDir, filePath);
+            //check name exits
+            foreach (var bpf in m_BPFiles)
+            {
+                if (bpf.name == name)
+                {
+                    return;
+                }
+            }
+
             m_BPFiles.Add(new BluePrintFile(name,filePath));
         }
 

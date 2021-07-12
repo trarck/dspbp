@@ -83,6 +83,10 @@ namespace DspTrarck
 			buildPreviews.Clear();
 			TrarckPlugin.Instance.factoryBP.CreateBuildPreviews();
 			buildPreviews.AddRange(TrarckPlugin.Instance.factoryBP.buildPreviews);
+			if (TrarckPlugin.Instance.isShowConnectNode)
+			{
+				ExpandConnGraph(actionBuild.model.connGraph, buildPreviews.Count);
+			}
 		}
 
 		protected override void _OnClose()
@@ -1890,11 +1894,13 @@ namespace DspTrarck
 			}
 		}
 
-		private static void ExpandConnGraph(ConnGizmoGraph connGizmoGraph)
+		private static void ExpandConnGraph(ConnGizmoGraph connGizmoGraph,int expandCount)
 		{
-			if (connGizmoGraph.pointCount >= connGizmoGraph.points.Length)
+			int needCount = connGizmoGraph.pointCount + expandCount + 8;
+			if (needCount >= connGizmoGraph.points.Length)
 			{
-				int newLen = connGizmoGraph.points.Length * 2;
+				int newLen = needCount;
+				newLen = Mathf.Max(newLen, 2048);
 				Vector3[] pointsCurrent = new Vector3[newLen];
 				connGizmoGraph.pointsCurrent.CopyTo(pointsCurrent, 0);
 				connGizmoGraph.pointsCurrent = pointsCurrent;
@@ -1910,20 +1916,21 @@ namespace DspTrarck
 		}
 		public override void UpdatePreviewModelConditions(BuildModel model)
 		{
-			foreach (BuildPreview buildPreview in base.buildPreviews)
+			if (TrarckPlugin.Instance.isShowConnectNode)
 			{
-				if (buildPreview.isConnNode)
+				foreach (BuildPreview buildPreview in base.buildPreviews)
 				{
-					ExpandConnGraph(model.connGraph);
-					model.connGraph.AddPoint(buildPreview.lpos, (buildPreview.condition == EBuildCondition.Ok || buildPreview.condition == EBuildCondition.NeedExport) ? 4u : 0u);
+					if (buildPreview.isConnNode)
+					{
+						model.connGraph.AddPoint(buildPreview.lpos, (buildPreview.condition == EBuildCondition.Ok || buildPreview.condition == EBuildCondition.NeedExport) ? 4u : 0u);
+					}
 				}
+				if (base.buildPreviews.Count == 0 && base.controller.cmd.stage == 0 && cursorValid)
+				{
+					model.connGraph.AddPoint(base.controller.cmd.target, 4u);
+				}
+				//model.connGraph.SetPointCount(model.connGraph.pointCount, setCurrent: true);
 			}
-
-			if (base.buildPreviews.Count == 0 && base.controller.cmd.stage == 0 && cursorValid)
-			{
-				model.connGraph.AddPoint(base.controller.cmd.target, 4u);
-			}
-			model.connGraph.SetPointCount(model.connGraph.pointCount, setCurrent: true);
 
 			foreach (BuildPreview buildPreview in base.buildPreviews)
 			{

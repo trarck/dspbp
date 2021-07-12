@@ -94,6 +94,18 @@ namespace DspTrarck
 			}
 		}
 
+		public bool isShowConnectNode
+		{
+			get
+			{
+				if (m_FactoryBPUI != null)
+				{
+					return m_FactoryBPUI.isShowConnectNode;
+				}
+				return false;
+			}
+		}
+
 		void Awake()
 		{
 			m_Harmony = new Harmony("com.trarck.dspplugin");
