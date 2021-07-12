@@ -59,15 +59,8 @@ public class ConvertMono : MonoBehaviour
     }
 
 
-    public void DoConvert()
+    private string GetSaveDir()
     {
-        string bpStringFile = m_BPFileInput.text;
-        if (string.IsNullOrEmpty(bpStringFile))
-        {
-            ShowMessage("file name is empty");
-            return;
-        }
-
 #if UNITY_EDITOR
         string saveDir = Path.Combine(Application.dataPath, "../bp");
 #else
@@ -77,8 +70,33 @@ public class ConvertMono : MonoBehaviour
         {
             Directory.CreateDirectory(saveDir);
         }
+        return saveDir;
+    }
+
+    public void ConvertToJson()
+    {
+        string bpStringFile = m_BPFileInput.text;
+        if (string.IsNullOrEmpty(bpStringFile))
+        {
+            ShowMessage("file name is empty");
+            return;
+        }
+        string dataContext = File.ReadAllText(bpStringFile);
+        string saveDir = GetSaveDir();
+        string dataJson = BlueprintData.GetJsonPrety(dataContext);
+        string jsonFile = Path.Combine(saveDir, Path.GetFileNameWithoutExtension(bpStringFile) + ".json");
+        File.WriteAllText(jsonFile, dataJson);
+    }
 
 
+    public void DoConvert()
+    {
+        string bpStringFile = m_BPFileInput.text;
+        if (string.IsNullOrEmpty(bpStringFile))
+        {
+            ShowMessage("file name is empty");
+            return;
+        }
 
         //dataFile = string.IsNullOrEmpty(bpStringFile) ? "D:\\csharp\\ConvertMBData\\ConvertMBData\\t.txt" : dataFile;// args[1];
         string dataContext = File.ReadAllText(bpStringFile);
@@ -93,10 +111,6 @@ public class ConvertMono : MonoBehaviour
         {
             LoadLapJoints();
         }
-
-        string dataJson = BlueprintData.GetJsonPrety(dataContext);
-        string jsonFile = Path.Combine(saveDir, Path.GetFileNameWithoutExtension(bpStringFile) + ".json");
-        File.WriteAllText(jsonFile, dataJson);
 
         int segmentCount = 200;
         foreach (var build in data.copiedBuildings)
@@ -119,8 +133,9 @@ public class ConvertMono : MonoBehaviour
         SetBPBaseData(bpData, data, planetRadius);
 
         //entities
+        Dictionary<int, BPEntityData> entityIdToBPEntities = new Dictionary<int, BPEntityData>();
         Dictionary<int, BeltCopy> entityIdToBeltMap = new Dictionary<int, BeltCopy>();
-        SetBPEnitiies(bpData, data, planetRadius, ref entityIdToBeltMap);
+        SetBPEnitiies(bpData, data, planetRadius,ref entityIdToBPEntities, ref entityIdToBeltMap);
 
         //连接
         SetBPConnects(bpData, data, planetRadius, entityIdToBeltMap);
@@ -129,6 +144,7 @@ public class ConvertMono : MonoBehaviour
         UpdateBPDataGrid(bpData);
 
         //保存
+        string saveDir = GetSaveDir();
         string bpFile = Path.Combine(saveDir, bpData.name);
         BPDataWriter.WriteBPDataToFile(bpFile, bpData);
 
@@ -136,7 +152,6 @@ public class ConvertMono : MonoBehaviour
         string bpJson = JsonUtility.ToJson(bpData,true);
         File.WriteAllText(bpJsonFile, bpJson);
     }
-
 
 	private void SetBPBaseData(BPData bpData, BlueprintData blueprintData,float planetRadius)
     {
@@ -292,7 +307,7 @@ public class ConvertMono : MonoBehaviour
             gridOffset.y -= originalLatGrid;
             entityData.grid = gridOffset;
 
-            if (entityData.type != BPEntityType.Inserter)
+            //if (entityData.type != BPEntityType.Inserter)
             {
                 //rotation
                 Quaternion rot = SphericalRotation(entityData.pos, 0);
@@ -317,13 +332,15 @@ public class ConvertMono : MonoBehaviour
                 gridOffset.y -= originalLatGrid;
                 entityData.grid2 = gridOffset;
 
-                //rotation
-                //rot = SphericalRotation(entityData.pos2, 0);
-                ////Debug.LogFormat("rot2:{0},{1},{2},{3}", rot.x, rot.y, rot.z, rot.w);
-                ////Debug.LogFormat("erot2:{0},{1},{2},{3}", entityData.rot2.x, entityData.rot2.y, entityData.rot2.z, entityData.rot2.w);
-                //rotInverse = Quaternion.Inverse(rot);
-                //entityData.rot2 = rotInverse * entityData.rot2;
-            }
+                {
+                    //rotation
+                    Quaternion rot = SphericalRotation(entityData.pos2, 0);
+                    //Debug.LogFormat("rot2:{0},{1},{2},{3}", rot.x, rot.y, rot.z, rot.w);
+                    //Debug.LogFormat("erot2:{0},{1},{2},{3}", entityData.rot2.x, entityData.rot2.y, entityData.rot2.z, entityData.rot2.w);
+                    Quaternion rotInverse = Quaternion.Inverse(rot);
+                    entityData.rot2 = rotInverse * entityData.rot2;
+                }
+			}
         }
     }
 
@@ -383,7 +400,7 @@ public class ConvertMono : MonoBehaviour
     }
     #region Building
 
-    private void SetBPEnitiies(BPData bpData, BlueprintData blueprintData, float planetRadius, ref Dictionary<int, BeltCopy> entityIdToBeltMap)
+    private void SetBPEnitiies(BPData bpData, BlueprintData blueprintData, float planetRadius, ref Dictionary<int, BPEntityData> entityIdToBPEntities,ref Dictionary<int, BeltCopy> entityIdToBeltMap)
     {
         //建筑信息
         bpData.entities = new List<BPEntityData>();
@@ -417,29 +434,10 @@ public class ConvertMono : MonoBehaviour
                 SetMultiLevelData(entiyData, building);
             }
 
-            SetEntityGcsGrid(entiyData);
+            SetEntityGcsGrid(entiyData,building.altitude==0);
             bpData.entities.Add(entiyData);
-        }
 
-        //分捡器
-        foreach (var inserter in blueprintData.copiedInserters)
-        {
-            BPEntityData entiyData = new BPEntityData();
-
-            entiyData.type = BPEntityType.Inserter;
-            entiyData.entityId = inserter.originalId;
-            entiyData.protoId = inserter.protoId;
-            entiyData.pos = (inserter.posDelta + blueprintData.referencePos).ToCartesian(planetRadius);
-            entiyData.rot = inserter.rot;
-            entiyData.pos2 = (inserter.pos2Delta + blueprintData.referencePos).ToCartesian(planetRadius);
-            entiyData.rot2 = inserter.rot2;
-
-            entiyData.pickOffset = inserter.pickOffset;
-            entiyData.insertOffset = inserter.insertOffset;
-            entiyData.filterId = inserter.filterId;
-
-            SetEntityGcsGrid(entiyData);
-            bpData.entities.Add(entiyData);
+            entityIdToBPEntities[entiyData.entityId] = entiyData;
         }
 
         //传送带
@@ -452,10 +450,38 @@ public class ConvertMono : MonoBehaviour
             entiyData.protoId = belt.protoId;
             entiyData.pos = (belt.cursorRelativePos + blueprintData.referencePos).ToCartesian(planetRadius);
             entiyData.rot = Quaternion.identity;
-            entiyData.offsetGround = belt.altitude;
+            entiyData.offsetGround = belt.altitude * 1.3333333f / 2;
 
-            SetEntityGcsGrid(entiyData);
+            SetEntityGcsGrid(entiyData,belt.altitude==0);
             entityIdToBeltMap[belt.originalId] = belt;
+            bpData.entities.Add(entiyData);
+        }
+
+        //分捡器
+        foreach (var inserter in blueprintData.copiedInserters)
+        {
+            BPEntityData entiyData = new BPEntityData();
+
+            entiyData.type = BPEntityType.Inserter;
+            entiyData.entityId = inserter.originalId;
+            entiyData.protoId = inserter.protoId;
+            entiyData.pickOffset = inserter.pickOffset;
+            entiyData.insertOffset = inserter.insertOffset;
+            entiyData.filterId = inserter.filterId;
+
+            //计算位置
+            BPEntityData refEntityData = null;
+            if (!entityIdToBPEntities.TryGetValue(inserter.referenceBuildingId, out refEntityData))
+            {
+                continue;
+            }
+
+            entiyData.pos = (inserter.posDelta + refEntityData.pos.ToSpherical()).ToCartesian(planetRadius+0.2f);
+            entiyData.rot = refEntityData.rot * inserter.rot;
+            entiyData.pos2 = (inserter.pos2Delta + refEntityData.pos.ToSpherical()).ToCartesian(planetRadius+0.2f);
+            entiyData.rot2 = refEntityData.rot * inserter.rot2;
+
+            SetEntityGcsGrid(entiyData,false);
             bpData.entities.Add(entiyData);
         }
     }
@@ -531,16 +557,22 @@ public class ConvertMono : MonoBehaviour
         }
     }
 
-    private void SetEntityGcsGrid(BPEntityData entityData)
+    private void SetEntityGcsGrid(BPEntityData entityData,bool needCheckGroundOffset)
     {
         //直角坐标转换成格子坐标。保留原坐标，比对作用。
         entityData.grid = m_PlanetCoordinate.LocalToGrid(entityData.pos);
+        if (needCheckGroundOffset)
+        {
+            entityData.offsetGround = Mathf.Max(0, entityData.pos.magnitude - m_PlanetCoordinate.radius - 0.2f);
+        }
 
         if (entityData.type == BPEntityType.Inserter)
         {
-            entityData.offsetGround = Mathf.Max(0, entityData.pos.magnitude - m_PlanetCoordinate.radius - 0.2f);
             entityData.grid2 = m_PlanetCoordinate.LocalToGrid(entityData.pos2);
-            entityData.offsetGround2 = Mathf.Max(0, entityData.pos2.magnitude - m_PlanetCoordinate.radius - 0.2f);
+            if (needCheckGroundOffset)
+            {
+                entityData.offsetGround2 = Mathf.Max(0, entityData.pos2.magnitude - m_PlanetCoordinate.radius - 0.2f);
+            }
         }
     }
     #endregion //Building
