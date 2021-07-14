@@ -40,6 +40,8 @@ namespace DspTrarck
         private string m_SearchContext = null;
         private List<BluePrintFile> m_SearchedBPFiles;
 
+        private Dictionary<int, int> m_bpEntitiesCount;
+
         private bool m_Mini = false;
 
         public FactoryBP factoryBP;
@@ -80,6 +82,8 @@ namespace DspTrarck
             m_SearchedBPFiles = new List<BluePrintFile>();
             m_PageItemCountStr = m_PageItemCount.ToString();
             m_PageIndexStr = m_PageIndex.ToString();
+
+            m_bpEntitiesCount = new Dictionary<int, int>();
         }
 
         public void Clear()
@@ -282,6 +286,27 @@ namespace DspTrarck
             }
         }
 
+        private void ShowBPEntities(BPData data)
+        {
+
+        }
+
+        private void CountBpEntities(BPData data)
+        {
+            m_bpEntitiesCount.Clear();
+            if (data.entities != null && data.entities.Count > 0)
+            {
+                foreach (var entity in data.entities)
+                {
+                    if (!m_bpEntitiesCount.ContainsKey(entity.protoId))
+                    {
+                        m_bpEntitiesCount[entity.protoId] = 0;
+                    }
+                    m_bpEntitiesCount[entity.protoId] += 1;
+                }
+            }
+        }
+
         private List<BluePrintFile> SearchBPFiles(string filter)
         {
             m_SearchedBPFiles.Clear();
@@ -325,6 +350,10 @@ namespace DspTrarck
         {
             m_BPName = Path.GetFileNameWithoutExtension(bpFile);
             factoryBP.LoadCurrentData(bpFile);
+            if (factoryBP.currentData != null)
+            {
+                CountBpEntities(factoryBP.currentData);
+            }
         }
         public void RefreshBPFiles()
         {
