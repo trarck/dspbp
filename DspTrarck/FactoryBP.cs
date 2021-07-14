@@ -862,11 +862,17 @@ namespace DspTrarck
 				Array.Copy(bpEntity.parameters, buildPreview.parameters, bpEntity.paramCount);
 			}
 
+			buildPreview.genNearColliderArea2 = 0;
+
 			buildPreview.previewIndex = -1;
 			if (bpEntity.type == BPEntityType.Belt)
 			{
 				buildPreview.isConnNode = true;
-				buildPreview.genNearColliderArea2 =20;
+				buildPreview.genNearColliderArea2 = 0;
+			}
+			else if (bpEntity.type == BPEntityType.Inserter)
+			{
+				buildPreview.genNearColliderArea2 = 0;
 			}
 
 
