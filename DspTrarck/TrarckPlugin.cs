@@ -106,6 +106,18 @@ namespace DspTrarck
 			}
 		}
 
+		public bool isLimitDistance
+		{
+			get
+			{
+				if (m_FactoryBPUI != null)
+				{
+					return m_FactoryBPUI.isLimitDistance;
+				}
+				return true;
+			}
+		}
+
 		void Awake()
 		{
 			m_Harmony = new Harmony("com.trarck.dspplugin");

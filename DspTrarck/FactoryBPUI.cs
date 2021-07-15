@@ -19,7 +19,7 @@ namespace DspTrarck
 
     public class FactoryBPUI
     {
-        private Rect m_UINormalRect = new Rect(30, 160, 200, 350);
+        private Rect m_UINormalRect = new Rect(30, 160, 200, 380);
         private Rect m_UIMinilRect = new Rect(5, 200, 30, 30);
 
 
@@ -29,6 +29,7 @@ namespace DspTrarck
         private bool m_WithoutBelt;
         private bool m_WithoutPowerNode;
 
+        private bool m_LimitDistance = true;
         private bool m_ShowConnectNode = true;
 
         private List<BluePrintFile> m_BPFiles;
@@ -50,6 +51,7 @@ namespace DspTrarck
         private Dictionary<int, string> m_EntityInfos;
         private Dictionary<int, Texture> m_EntityIcons;
         private Vector2 m_BPInfoScrollPos;
+        private GUIStyle m_BPInfoItemCountStyle;
 
         private bool m_Mini = false;
 
@@ -82,6 +84,7 @@ namespace DspTrarck
         public bool isWithoutBelt => m_WithoutBelt;
 
         public bool isWithoutPowerNode => m_WithoutPowerNode;
+        public bool isLimitDistance => m_LimitDistance;
         public bool isShowConnectNode => m_ShowConnectNode;
 
         public void Init(FactoryBP fbp)
@@ -213,7 +216,8 @@ namespace DspTrarck
                 //build
                 GUILayout.BeginHorizontal();
                 {
-                    GUILayout.Label("show");
+                    GUILayout.Label("Build");
+                    m_LimitDistance = GUILayout.Toggle(m_LimitDistance, "LD");
                     m_ShowConnectNode = GUILayout.Toggle(m_ShowConnectNode, "Conn");
                     m_ShowBPInfo = GUILayout.Toggle(m_ShowBPInfo, "Info");
                 }
@@ -348,7 +352,13 @@ namespace DspTrarck
             int count = m_BPEntitiesCount.Count;
             if (count > 0)
             {
-                GUI.skin.label.alignment = TextAnchor.MiddleLeft;
+                if (m_BPInfoItemCountStyle == null)
+                {
+                    m_BPInfoItemCountStyle = new GUIStyle(GUI.skin.label);
+                    m_BPInfoItemCountStyle.alignment = TextAnchor.MiddleLeft;
+                    m_BPInfoItemCountStyle.fontSize = 16;
+                }
+
                 GUILayout.BeginArea(m_UIBPInfoRect, GUI.skin.box);
                 {
                     float height = (count+1) * m_UIBPInfoItemHeight;
@@ -362,16 +372,16 @@ namespace DspTrarck
                         {
                             GUILayout.BeginHorizontal();
                             GUILayout.Label(texture, GUILayout.Height(30), GUILayout.Width(30));
-                            GUILayout.Label(iter.Value.ToString(),GUILayout.Height(26));
+                            GUILayout.Label(iter.Value.ToString(), m_BPInfoItemCountStyle, GUILayout.Height(26));
                             GUILayout.EndHorizontal();
                         }
                         else if (m_EntityInfos.TryGetValue(iter.Key, out info))
                         {
-                            GUILayout.Label(info);
+                            GUILayout.Label(info, m_BPInfoItemCountStyle);
                         }
                         else
                         {
-                            GUILayout.Label(string.Format("{0}:{1}",iter.Key,iter.Value));
+                            GUILayout.Label(string.Format("{0}:{1}",iter.Key,iter.Value), m_BPInfoItemCountStyle);
                         }
                     }
                     GUILayout.EndScrollView();

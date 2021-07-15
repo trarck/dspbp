@@ -747,26 +747,30 @@ namespace DspTrarck
 						continue;
 					}
 				}
-				Vector3 vector9 = base.player.position;
-				float num10 = base.player.mecha.buildArea * base.player.mecha.buildArea;
-				if (flag2)
+
+				if (TrarckPlugin.Instance.isLimitDistance)
 				{
-					vector9 = vector9.normalized;
-					vector9 *= planet.realRadius;
-					num10 *= 6f;
-				}
-				if ((vector - vector9).sqrMagnitude > num10)
-				{
-					buildPreview.condition = EBuildCondition.OutOfReach;
-					continue;
-				}
-				if (planet != null)
-				{
-					float num11 = history.buildMaxHeight + 0.5f + planet.realRadius * (flag2 ? 1.025f : 1f);
-					if (vector.sqrMagnitude > num11 * num11)
+					Vector3 vector9 = base.player.position;
+					float num10 = base.player.mecha.buildArea * base.player.mecha.buildArea;
+					if (flag2)
+					{
+						vector9 = vector9.normalized;
+						vector9 *= planet.realRadius;
+						num10 *= 6f;
+					}
+					if ((vector - vector9).sqrMagnitude > num10)
 					{
 						buildPreview.condition = EBuildCondition.OutOfReach;
 						continue;
+					}
+					if (planet != null)
+					{
+						float num11 = history.buildMaxHeight + 0.5f + planet.realRadius * (flag2 ? 1.025f : 1f);
+						if (vector.sqrMagnitude > num11 * num11)
+						{
+							buildPreview.condition = EBuildCondition.OutOfReach;
+							continue;
+						}
 					}
 				}
 
