@@ -273,6 +273,8 @@ namespace DspTrarck
 				m_FactoryBP.SetPlanetData(planetData);
 				m_FactoryBP.player = GameMain.mainPlayer;
 			}
+
+			m_FactoryBPUI.EnterBP();
 		}
 
 		[Serializable]
@@ -337,13 +339,19 @@ namespace DspTrarck
 			m_BPBuild = false;
 			m_BPCreate = false;
 
-			//m_FactoryBPUI.Clear();
+			m_FactoryBPUI.ExitBP();
 			m_FactoryBP.Clear();
 		}
 
 		private void SaveCurrentBPData()
 		{
 			m_FactoryBPUI.SaveBPFile();
+		}
+
+		public void CopyEntities(string name, List<EntityData> entities, BPData.PosType posType)
+		{
+			m_FactoryBP.CopyEntities(name, entities, posType);
+			m_FactoryBPUI.CountBpEntities(m_FactoryBP.currentData);
 		}
 
 		private void CreateBuildPreviews(Vector3 mousePos)

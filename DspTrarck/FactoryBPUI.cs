@@ -22,25 +22,34 @@ namespace DspTrarck
         private Rect m_UINormalRect = new Rect(30, 160, 200, 350);
         private Rect m_UIMinilRect = new Rect(5, 200, 30, 30);
 
+
         private string m_BPName="";
 
         private bool m_CopyAdd;
         private bool m_WithoutBelt;
         private bool m_WithoutPowerNode;
 
-        private bool m_ShowConnectNode = false;
+        private bool m_ShowConnectNode = true;
 
         private List<BluePrintFile> m_BPFiles;
 
         private Vector2 m_BPFilesScrollPos;
         private string m_PageItemCountStr;
         private string m_PageIndexStr;
-        private int m_PageItemCount = 100;
+        private int m_PageItemCount = 20;
         private int m_PageIndex = 1;
         private string m_SearchContext = null;
         private List<BluePrintFile> m_SearchedBPFiles;
 
-        private Dictionary<int, int> m_bpEntitiesCount;
+        private bool m_ShowBPInfo=true;
+        private Rect m_UIBPInfoRect = new Rect(235, 180, 100, 300);
+        private float m_UIBPInfoItemHeight = 30;
+        private float m_UIBPInfoVisibleHeight = 500;
+
+        private Dictionary<int, int> m_BPEntitiesCount;
+        private Dictionary<int, string> m_EntityInfos;
+        private Dictionary<int, Texture> m_EntityIcons;
+        private Vector2 m_BPInfoScrollPos;
 
         private bool m_Mini = false;
 
@@ -83,7 +92,9 @@ namespace DspTrarck
             m_PageItemCountStr = m_PageItemCount.ToString();
             m_PageIndexStr = m_PageIndex.ToString();
 
-            m_bpEntitiesCount = new Dictionary<int, int>();
+            m_BPEntitiesCount = new Dictionary<int, int>();
+            m_EntityInfos = new Dictionary<int, string>();
+            m_EntityIcons = new Dictionary<int, Texture>();
         }
 
         public void Clear()
@@ -101,9 +112,49 @@ namespace DspTrarck
             {
                 m_SearchedBPFiles.Clear();
             }
-            m_BPFilesScrollPos = Vector2.zero;
-            m_Mini = false;
 
+            if (m_BPEntitiesCount != null)
+            {
+                m_BPEntitiesCount.Clear();
+            }
+
+            if (m_EntityInfos != null)
+            {
+                m_EntityInfos.Clear();
+            }
+
+            if (m_EntityIcons != null)
+            {
+                m_EntityIcons.Clear();
+            }
+
+            m_BPFilesScrollPos = Vector2.zero;
+            m_BPInfoScrollPos = Vector2.zero;
+            m_Mini = false;
+        }
+
+        public void EnterBP()
+        {
+
+        }
+
+        public void ExitBP()
+        {
+            m_BPName = "";
+            if (m_BPEntitiesCount != null)
+            {
+                m_BPEntitiesCount.Clear();
+            }
+
+            if (m_EntityInfos != null)
+            {
+                m_EntityInfos.Clear();
+            }
+
+            if (m_EntityIcons != null)
+            {
+                m_EntityIcons.Clear();
+            }
         }
 
         public void OnGUI()
@@ -164,6 +215,7 @@ namespace DspTrarck
                 {
                     GUILayout.Label("show");
                     m_ShowConnectNode = GUILayout.Toggle(m_ShowConnectNode, "Conn");
+                    m_ShowBPInfo = GUILayout.Toggle(m_ShowBPInfo, "Info");
                 }
                 GUILayout.EndHorizontal();
 
@@ -187,6 +239,11 @@ namespace DspTrarck
                 ShowBPFiles();
             }
             GUILayout.EndArea();
+
+            if (m_ShowBPInfo)
+            {
+                ShowBPInfo();
+            }
         }
 
         private void ShowBPFiles()
@@ -286,23 +343,78 @@ namespace DspTrarck
             }
         }
 
-        private void ShowBPEntities(BPData data)
+        private void ShowBPInfo()
         {
+            int count = m_BPEntitiesCount.Count;
+            if (count > 0)
+            {
+                GUI.skin.label.alignment = TextAnchor.MiddleLeft;
+                GUILayout.BeginArea(m_UIBPInfoRect, GUI.skin.box);
+                {
+                    float height = (count+1) * m_UIBPInfoItemHeight;
+                    m_UIBPInfoRect.height = height;
+                    m_BPInfoScrollPos = GUILayout.BeginScrollView(m_BPInfoScrollPos, GUILayout.Height(m_UIBPInfoVisibleHeight));
+                    foreach (var iter in m_BPEntitiesCount)
+                    {
+                        Texture texture = null;
+                        string info = null;
+                        if (m_EntityIcons.TryGetValue(iter.Key, out texture))
+                        {
+                            GUILayout.BeginHorizontal();
+                            GUILayout.Label(texture, GUILayout.Height(30), GUILayout.Width(30));
+                            GUILayout.Label(iter.Value.ToString(),GUILayout.Height(26));
+                            GUILayout.EndHorizontal();
+                        }
+                        else if (m_EntityInfos.TryGetValue(iter.Key, out info))
+                        {
+                            GUILayout.Label(info);
+                        }
+                        else
+                        {
+                            GUILayout.Label(string.Format("{0}:{1}",iter.Key,iter.Value));
+                        }
+                    }
+                    GUILayout.EndScrollView();
+                }
+                GUILayout.EndArea();
+            }
 
         }
 
-        private void CountBpEntities(BPData data)
+        public void CountBpEntities(BPData data)
         {
-            m_bpEntitiesCount.Clear();
+            m_BPEntitiesCount.Clear();
+            m_EntityInfos.Clear();
+            m_EntityIcons.Clear();
+
+            if (data == null)
+            {
+                return;
+            }
+
             if (data.entities != null && data.entities.Count > 0)
             {
                 foreach (var entity in data.entities)
                 {
-                    if (!m_bpEntitiesCount.ContainsKey(entity.protoId))
+                    if (!m_BPEntitiesCount.ContainsKey(entity.protoId))
                     {
-                        m_bpEntitiesCount[entity.protoId] = 0;
+                        m_BPEntitiesCount[entity.protoId] = 0;
                     }
-                    m_bpEntitiesCount[entity.protoId] += 1;
+                    m_BPEntitiesCount[entity.protoId] += 1;
+                }
+
+                foreach (var iter in m_BPEntitiesCount)
+                {
+                    ItemProto itemProto = LDB.items.Select(iter.Key);
+                    if (itemProto != null)
+                    {
+                        m_EntityInfos[iter.Key] = string.Format("{0}:{1}",itemProto.name,iter.Value);
+                        m_EntityIcons[iter.Key] = itemProto.iconSprite.texture;
+                    }
+                    else
+                    {
+                        m_EntityInfos[iter.Key] = string.Format("{0}:{1}", iter.Key, iter.Value);
+                    }
                 }
             }
         }
@@ -350,10 +462,7 @@ namespace DspTrarck
         {
             m_BPName = Path.GetFileNameWithoutExtension(bpFile);
             factoryBP.LoadCurrentData(bpFile);
-            if (factoryBP.currentData != null)
-            {
-                CountBpEntities(factoryBP.currentData);
-            }
+            CountBpEntities(factoryBP.currentData);
         }
         public void RefreshBPFiles()
         {
