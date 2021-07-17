@@ -64,6 +64,13 @@ namespace DspTrarck
 		private int[] tmp_conn = new int[16];
 		private List<int> tmp_links = new List<int>();
 
+		private int _phaseCheckBuildConditionThreshold = 3000;
+		private int _phaseCheckCountPerFrame = 1000;
+		private float _phaseCheckTimePerFrame = 0.05f;//20 frame
+		private int _phaseCheckIndex=0;
+		private bool _usePhaseCheck = false;
+
+
 		protected override void _OnInit()
 		{
 			YHDebug.Log("Init in bp tools");
@@ -87,6 +94,8 @@ namespace DspTrarck
 			{
 				ExpandConnGraph(actionBuild.model.connGraph, buildPreviews.Count);
 			}
+			_usePhaseCheck = buildPreviews.Count > _phaseCheckBuildConditionThreshold;
+			_phaseCheckIndex = 0;
 		}
 
 		protected override void _OnClose()
@@ -97,6 +106,8 @@ namespace DspTrarck
 			gap = 0f;
 			tabgapDir = true;
 			modelOffset = 0;
+			_usePhaseCheck = false;
+			_phaseCheckIndex = 0;
 		}
 
 		protected override void _OnTick(long time)
@@ -108,7 +119,7 @@ namespace DspTrarck
 			}
 			UpdateRaycast();
 			DeterminePreviews();
-			UpdateCollidersForCursor();
+			//UpdateCollidersForCursor();
 			UpdatePreviewModels(base.actionBuild.model);
 			bool condition = CheckBuildConditions();
 			UpdatePreviewModelConditions(base.actionBuild.model);
@@ -608,7 +619,26 @@ namespace DspTrarck
 			{
 				num = templatePreviews.Count;
 			}
-			for (int i = 0; i < base.buildPreviews.Count; i++)
+
+			int startIndex = 0;
+			int endIndex = buildPreviews.Count;
+			bool checkPhaseEnd = true;
+			if (_usePhaseCheck)
+			{
+				startIndex = _phaseCheckIndex;
+				_phaseCheckIndex += _phaseCheckCountPerFrame;
+				if (_phaseCheckIndex >= endIndex)
+				{
+					_phaseCheckIndex = 0;
+				}
+				else
+				{
+					endIndex = _phaseCheckIndex;
+					checkPhaseEnd = false;
+				}
+			}
+
+			for (int i = startIndex; i < endIndex; i++)
 			{
 				BuildPreview buildPreview = base.buildPreviews[i];
 				BuildPreview buildPreview2 = base.buildPreviews[i / num * num];
@@ -777,6 +807,26 @@ namespace DspTrarck
 				//belt
 				if (isBelt)
 				{
+					if (buildPreview.coverObjId == 0 || buildPreview.willRemoveCover)
+					{
+						int itemId = buildPreview.item.ID;
+						int count2 = 1;
+						if (tmpInhandId == itemId && tmpInhandCount > 0)
+						{
+							count2 = 1;
+							tmpInhandCount--;
+						}
+						else
+						{
+							tmpPackage.TakeTailItems(ref itemId, ref count2);
+						}
+						if (count2 == 0)
+						{
+							buildPreview.condition = EBuildCondition.NotEnoughItem;
+							continue;
+						}
+					}
+
 					bool flag10 = buildPreview.input != null && buildPreview.input.desc.isBelt;
 					bool flag11 = buildPreview.output != null && buildPreview.output.desc.isBelt;
 					Vector3 vector5 = buildPreview.lpos.normalized * 0.22f;
@@ -1433,25 +1483,32 @@ namespace DspTrarck
 
 			}
 			bool flag7 = true;
-			for (int num61 = 0; num61 < base.buildPreviews.Count; num61++)
+			if (checkPhaseEnd)
 			{
-				BuildPreview buildPreview3 = base.buildPreviews[num61];
-				if (buildPreview3.condition != 0 && buildPreview3.condition != EBuildCondition.NeedConn)
+				for (int num61 = 0; num61 < base.buildPreviews.Count; num61++)
 				{
-					flag7 = false;
-					base.actionBuild.model.cursorState = -1;
-					base.actionBuild.model.cursorText = buildPreview3.conditionText;
-					if (buildPreview3.condition == EBuildCondition.OutOfVerticalConstructionHeight && !flag)
+					BuildPreview buildPreview3 = base.buildPreviews[num61];
+					if (buildPreview3.condition != 0 && buildPreview3.condition != EBuildCondition.NeedConn)
 					{
-						base.actionBuild.model.cursorText += "垂直建造可升级".Translate();
+						flag7 = false;
+						base.actionBuild.model.cursorState = -1;
+						base.actionBuild.model.cursorText = buildPreview3.conditionText;
+						if (buildPreview3.condition == EBuildCondition.OutOfVerticalConstructionHeight && !flag)
+						{
+							base.actionBuild.model.cursorText += "垂直建造可升级".Translate();
+						}
+						break;
 					}
-					break;
+				}
+				if (flag7)
+				{
+					base.actionBuild.model.cursorState = 0;
+					base.actionBuild.model.cursorText = "点击鼠标建造".Translate();
 				}
 			}
-			if (flag7)
+			else
 			{
-				base.actionBuild.model.cursorState = 0;
-				base.actionBuild.model.cursorText = "点击鼠标建造".Translate();
+				flag7 = false;
 			}
 			if (!flag7 && !VFInput.onGUI)
 			{
@@ -1484,6 +1541,7 @@ namespace DspTrarck
 			bool flag = false;
 			int num = 0;
 			tmp_links.Clear();
+			_phaseCheckIndex = 0;
 			TrarckPlugin.Instance.NeedResetBuildPreview = false;
 			FactoryBP factoryBP = TrarckPlugin.Instance.factoryBP;
 

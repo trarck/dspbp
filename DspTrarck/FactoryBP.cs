@@ -862,7 +862,7 @@ namespace DspTrarck
 				Array.Copy(bpEntity.parameters, buildPreview.parameters, bpEntity.paramCount);
 			}
 
-			buildPreview.genNearColliderArea2 = 0;
+			buildPreview.genNearColliderArea2 = 10;
 
 			buildPreview.previewIndex = -1;
 			if (bpEntity.type == BPEntityType.Belt)
@@ -1360,6 +1360,7 @@ namespace DspTrarck
 		public string SaveBPDataJson(BPData bpData)
 		{
 			string filePath = Path.Combine(bpDir, bpData.name+".json");
+			filePath = CheckFilePathExists(filePath);
 			string jsonStr = JsonUtility.ToJson(bpData); 
 			File.WriteAllText(filePath, jsonStr);
 			return filePath;
@@ -1368,6 +1369,7 @@ namespace DspTrarck
 		public string SaveBPDataBinary(BPData bpData)
 		{
 			string filePath = Path.Combine(bpDir, bpData.name+".bin");
+			filePath =  CheckFilePathExists(filePath);
 			YHDebug.LogFormat("dir:{0},file:{1},entities:{2}", bpDir, filePath,bpData.entities.Count);
 			string fileDir = Path.GetDirectoryName(filePath);
 			if (!Directory.Exists(fileDir))
@@ -1376,6 +1378,38 @@ namespace DspTrarck
 			}
 			BPDataWriter.WriteBPDataToFile(filePath, bpData);
 			return filePath;
+		}
+
+		private string CheckFilePathExists(string filePath)
+		{
+			if (!File.Exists(filePath))
+			{
+				return filePath;
+			}
+
+			string dir = Path.GetDirectoryName(filePath);
+			string fileName = Path.GetFileNameWithoutExtension(filePath);
+			string ext = Path.GetExtension(fileName);
+			string[] sameFiles =  Directory.GetFiles(dir, "*" + fileName + "_*");
+			int index = 1;
+			if (sameFiles != null && sameFiles.Length > 0)
+			{
+
+				foreach (var fn in sameFiles)
+				{
+					string[] parts = fn.Split('_');
+					int idx = 0;
+					if (int.TryParse(parts[parts.Length - 1], out idx))
+					{
+						if (idx > index)
+						{
+							index = idx;
+						}
+					}
+				}
+			}
+
+			return Path.Combine(dir, string.Format("{0}_{1}{2}", fileName, index, ext));
 		}
 
 		#endregion
