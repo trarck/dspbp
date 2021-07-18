@@ -1057,24 +1057,27 @@ namespace DspTrarck
 								{
 									continue;
 								}
-								Pose objectPose = GetObjectPose(num13);
-								Pose objectPose2 = GetObjectPose2(num13);
-								if ((double)(objectPose.position - buildPreview.lpos).sqrMagnitude < 0.01 && (double)(objectPose2.position - buildPreview.lpos2).sqrMagnitude < 0.01 && ((double)(objectPose.forward - forward).sqrMagnitude < 1E-06 || buildPreview.desc.isInserter))
-								{
-									if (buildPreview.item.ID == itemProto.ID)
-									{
-										buildPreview.coverObjId = num13;
-										buildPreview.willRemoveCover = false;
-										flag4 = false;
-									}
-									else
-									{
-										buildPreview.coverObjId = num13;
-										buildPreview.willRemoveCover = true;
-										flag4 = false;
-									}
-									break;
-								}
+								break;
+								//Pose objectPose = GetObjectPose(num13);
+								//Pose objectPose2 = GetObjectPose2(num13);
+								//if ((double)(objectPose.position - buildPreview.lpos).sqrMagnitude < 0.01 && (double)(objectPose2.position - buildPreview.lpos2).sqrMagnitude < 0.01 && ((double)(objectPose.forward - forward).sqrMagnitude < 1E-06 || buildPreview.desc.isInserter))
+								//{
+								//	if (buildPreview.item.ID == itemProto.ID)
+								//	{
+								//		buildPreview.coverObjId = num13;
+								//		Debug.LogFormat("add cover:{0}", buildPreview.coverObjId);
+								//		buildPreview.willRemoveCover = false;
+								//		flag4 = false;
+								//	}
+								//	else
+								//	{
+								//		buildPreview.coverObjId = num13;
+								//		Debug.LogFormat("add cover:{0}", buildPreview.coverObjId);
+								//		buildPreview.willRemoveCover = true;
+								//		flag4 = false;
+								//	}
+								//	break;
+								//}
 							}
 							if (flag4)
 							{
@@ -1542,7 +1545,7 @@ namespace DspTrarck
 			int num = 0;
 			tmp_links.Clear();
 			_phaseCheckIndex = 0;
-			TrarckPlugin.Instance.NeedResetBuildPreview = false;
+			//TrarckPlugin.Instance.NeedResetBuildPreview = false;
 			FactoryBP factoryBP = TrarckPlugin.Instance.factoryBP;
 
 			foreach (BuildPreview buildPreview in base.buildPreviews)
@@ -1564,7 +1567,7 @@ namespace DspTrarck
 								buildPreview.coverObjId = objId;
 								buildPreview.willRemoveCover = false;
 
-								TrarckPlugin.Instance.NeedResetBuildPreview = true;
+								//TrarckPlugin.Instance.NeedResetBuildPreview = true;
 							}
 						}
 					}
@@ -1588,7 +1591,7 @@ namespace DspTrarck
 								buildPreview.inputFromSlot = -1;
 								buildPreview.inputOffset = 0;
 
-								TrarckPlugin.Instance.NeedResetBuildPreview = true;
+								//TrarckPlugin.Instance.NeedResetBuildPreview = true;
 							}
 						}
 					}
@@ -1608,13 +1611,12 @@ namespace DspTrarck
 								buildPreview.outputFromSlot = 0;
 								buildPreview.outputToSlot = -1;
 								buildPreview.outputOffset = 0;
-								TrarckPlugin.Instance.NeedResetBuildPreview = true;
+								//TrarckPlugin.Instance.NeedResetBuildPreview = true;
 							}
 						}
 					}
 				}
 			}
-
 			foreach (BuildPreview buildPreview in base.buildPreviews)
 			{
 				if (buildPreview.desc.isBelt)
@@ -1891,7 +1893,6 @@ namespace DspTrarck
 					}
 				}
 			}
-
 			//belt
 			foreach (BuildPreview buildPreview3 in base.buildPreviews)
 			{
@@ -1931,8 +1932,7 @@ namespace DspTrarck
 			{
 				actionBuild.buildTargetPositionWanted = castGroundPosSnapped;
 			}
-
-			if (TrarckPlugin.Instance.NeedResetBuildPreview)
+			//if (TrarckPlugin.Instance.NeedResetBuildPreview)
 			{
 				TrarckPlugin.Instance.factoryBP.ResetBuildPreviewsRealChanges();
 			}

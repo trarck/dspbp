@@ -485,7 +485,11 @@ namespace DspTrarck
 				{
 					ResetBuildPreviewRealConnect(buildPreview);
 				}
-				else if (buildPreview.desc.isBelt && buildPreview.genNearColliderArea2 <0.001f)
+				//else if (buildPreview.desc.isBelt && buildPreview.genNearColliderArea2 <0.001f)
+				//{
+				//	ResetBuildPreviewCover(buildPreview);
+				//}
+				else
 				{
 					ResetBuildPreviewCover(buildPreview);
 				}
@@ -1360,7 +1364,7 @@ namespace DspTrarck
 		public string SaveBPDataJson(BPData bpData)
 		{
 			string filePath = Path.Combine(bpDir, bpData.name+".json");
-			filePath = CheckFilePathExists(filePath);
+			//filePath = CheckFilePathExists(filePath);
 			string jsonStr = JsonUtility.ToJson(bpData); 
 			File.WriteAllText(filePath, jsonStr);
 			return filePath;
@@ -1369,7 +1373,7 @@ namespace DspTrarck
 		public string SaveBPDataBinary(BPData bpData)
 		{
 			string filePath = Path.Combine(bpDir, bpData.name+".bin");
-			filePath =  CheckFilePathExists(filePath);
+			//filePath =  CheckFilePathExists(filePath);
 			YHDebug.LogFormat("dir:{0},file:{1},entities:{2}", bpDir, filePath,bpData.entities.Count);
 			string fileDir = Path.GetDirectoryName(filePath);
 			if (!Directory.Exists(fileDir))
@@ -1389,7 +1393,7 @@ namespace DspTrarck
 
 			string dir = Path.GetDirectoryName(filePath);
 			string fileName = Path.GetFileNameWithoutExtension(filePath);
-			string ext = Path.GetExtension(fileName);
+			string ext = Path.GetExtension(filePath);
 			string[] sameFiles =  Directory.GetFiles(dir, "*" + fileName + "_*");
 			int index = 1;
 			if (sameFiles != null && sameFiles.Length > 0)

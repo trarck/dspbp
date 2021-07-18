@@ -24,6 +24,7 @@ namespace DspTrarck
 
 
         private string m_BPName="";
+        private string m_CurrentBPName = "";
 
         private bool m_CopyAdd;
         private bool m_WithoutBelt;
@@ -103,6 +104,7 @@ namespace DspTrarck
         public void Clear()
         {
             m_BPName = "";
+            m_CurrentBPName = "";
             m_CopyAdd = false;
             m_WithoutBelt = false;
             m_WithoutPowerNode = false;
@@ -144,6 +146,7 @@ namespace DspTrarck
         public void ExitBP()
         {
             m_BPName = "";
+            m_CurrentBPName = "";
             if (m_BPEntitiesCount != null)
             {
                 m_BPEntitiesCount.Clear();
@@ -198,6 +201,7 @@ namespace DspTrarck
                 {
                     GUILayout.Label("BP", GUILayout.ExpandWidth(false));
                     m_BPName = GUILayout.TextField(m_BPName, GUILayout.Width(100));
+                    GUILayout.Label(m_CurrentBPName);
                 }
                 GUILayout.EndHorizontal();
 
@@ -452,10 +456,12 @@ namespace DspTrarck
             if (!string.IsNullOrEmpty(m_BPName))
             {
                 factoryBP.currentData.name = m_BPName;
+                m_BPName = "";
             }
 
             string filePath= factoryBP.SaveBPData(factoryBP.currentData);
             string name = YH.FileSystem.Relative(factoryBP.bpDir, filePath);
+            m_CurrentBPName = Path.GetFileNameWithoutExtension(name);
             //check name exits
             foreach (var bpf in m_BPFiles)
             {
@@ -470,7 +476,7 @@ namespace DspTrarck
 
         private void LoadBPFile(string bpFile)
         {
-            m_BPName = Path.GetFileNameWithoutExtension(bpFile);
+            m_CurrentBPName = Path.GetFileNameWithoutExtension(bpFile);
             factoryBP.LoadCurrentData(bpFile);
             CountBpEntities(factoryBP.currentData);
         }
