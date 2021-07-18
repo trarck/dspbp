@@ -22,6 +22,7 @@ namespace DspTrarck
         private Rect m_UINormalRect = new Rect(30, 160, 200, 380);
         private Rect m_UIMinilRect = new Rect(5, 200, 30, 30);
 
+        private GUIStyle m_SmallTextStyle;
 
         private string m_BPName="";
         private string m_CurrentBPName = "";
@@ -196,12 +197,20 @@ namespace DspTrarck
 
             GUILayout.BeginArea(m_UINormalRect, GUI.skin.box);
             {
+                if (m_SmallTextStyle == null)
+                {
+                    m_SmallTextStyle = new GUIStyle(GUI.skin.label);
+                    m_SmallTextStyle.fontSize = 8;
+                    m_SmallTextStyle.wordWrap = false;
+                    m_SmallTextStyle.clipping = TextClipping.Clip;
+                }
+
                 //BP
                 GUILayout.BeginHorizontal();
                 {
                     GUILayout.Label("BP", GUILayout.ExpandWidth(false));
                     m_BPName = GUILayout.TextField(m_BPName, GUILayout.Width(100));
-                    GUILayout.Label(m_CurrentBPName);
+                    GUILayout.Label(m_CurrentBPName, m_SmallTextStyle,GUILayout.Width(60));
                 }
                 GUILayout.EndHorizontal();
 
